@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptForge API Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #2196F3;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .token-display {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 PromptForge API Integration Test</h1>
+        <p>This page tests the frontend-to-backend integration using the real API endpoints.</p>
+
+        <div class="test-section">
+            <h2>1. Backend Health Check</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <div id="healthResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Authentication Test</h2>
+            <div>
+                <label>Email: <input type="email" id="email" value="admin@promptforge.com" /></label><br><br>
+                <label>Password: <input type="password" id="password" value="admin123" /></label><br><br>
+                <button onclick="testLogin()">Test Login</button>
+                <button onclick="testLogout()">Clear Tokens</button>
+            </div>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Get Current User</h2>
+            <button onclick="testGetUser()">Get Current User (requires login)</button>
+            <div id="userResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Get Projects</h2>
+            <button onclick="testGetProjects()">Get Projects (requires login)</button>
+            <div id="projectsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Test All Endpoints</h2>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <div id="allTestsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const API_V1_PREFIX = '/api/v1';
+        let accessToken = null;
+        let refreshToken = null;
+
+        // Helper function to display results
+        function displayResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="test-result ${type}">${content}</div>`;
+        }
+
+        // 1. Test Health Endpoint
+        async function testHealth() {
+            displayResult('healthResult', 'Testing...', 'info');
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+
+                if (response.ok && data.status === 'healthy') {
+                    displayResult('healthResult', `
+                        <strong>✅ Health Check Passed</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    displayResult('healthResult', `❌ Health check failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                displayResult('healthResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 2. Test Login
+        async function testLogin() {
+            displayResult('loginResult', 'Logging in...', 'info');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.access_token) {
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+
+                    // Store in localStorage
+                    localStorage.setItem('promptforge_access_token', accessToken);
+                    localStorage.setItem('promptforge_refresh_token', refreshToken);
+
+                    displayResult('loginResult', `
+                        <strong>✅ Login Successful</strong><br>
+                        <strong>Token Type:</strong> ${data.token_type}<br>
+                        <strong>Access Token (first 50 chars):</strong><br>
+                        <span class="token-display">${accessToken.substring(0, 50)}...</span><br>
+                        <strong>Refresh Token (first 50 chars):</strong><br>
+                        <span class="token-display">${refreshToken.substring(0, 50)}...</span>
+                    `, 'success');
+                } else {
+                    displayResult('loginResult', `❌ Login failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                displayResult('loginResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Logout
+        function testLogout() {
+            accessToken = null;
+            refreshToken = null;
+            localStorage.removeItem('promptforge_access_token');
+            localStorage.removeItem('promptforge_refresh_token');
+            displayResult('loginResult', '✅ Tokens cleared', 'success');
+        }
+
+        // 3. Test Get Current User
+        async function testGetUser() {
+            displayResult('userResult', 'Fetching user...', 'info');
+
+            // Try to get token from storage if not in memory
+            if (!accessToken) {
+                accessToken = localStorage.getItem('promptforge_access_token');
+            }
+
+            if (!accessToken) {
+                displayResult('userResult', '❌ No access token. Please login first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayResult('userResult', `
+                        <strong>✅ User Info Retrieved</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    displayResult('userResult', `❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                displayResult('userResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. Test Get Projects
+        async function testGetProjects() {
+            displayResult('projectsResult', 'Fetching projects...', 'info');
+
+            // Try to get token from storage if not in memory
+            if (!accessToken) {
+                accessToken = localStorage.getItem('promptforge_access_token');
+            }
+
+            if (!accessToken) {
+                displayResult('projectsResult', '❌ No access token. Please login first.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/projects`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                    },
+                });
+
+                const data = await response.json();
+
+                if (response.ok && Array.isArray(data)) {
+                    displayResult('projectsResult', `
+                        <strong>✅ Projects Retrieved (${data.length} projects)</strong><br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `, 'success');
+                } else {
+                    displayResult('projectsResult', `❌ Failed: ${JSON.stringify(data)}`, 'error');
+                }
+            } catch (error) {
+                displayResult('projectsResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. Run All Tests
+        async function runAllTests() {
+            displayResult('allTestsResult', 'Running all tests...', 'info');
+
+            let results = [];
+
+            // Test 1: Health
+            try {
+                const healthRes = await fetch(`${API_BASE_URL}/health`);
+                const healthData = await healthRes.json();
+                results.push({
+                    test: 'Health Check',
+                    passed: healthRes.ok && healthData.status === 'healthy',
+                    data: healthData
+                });
+            } catch (error) {
+                results.push({ test: 'Health Check', passed: false, error: error.message });
+            }
+
+            // Test 2: Login
+            try {
+                const loginRes = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                    }),
+                });
+                const loginData = await loginRes.json();
+                const passed = loginRes.ok && loginData.access_token;
+                if (passed) {
+                    accessToken = loginData.access_token;
+                    localStorage.setItem('promptforge_access_token', accessToken);
+                }
+                results.push({ test: 'Login', passed, data: passed ? 'Token received' : loginData });
+            } catch (error) {
+                results.push({ test: 'Login', passed: false, error: error.message });
+            }
+
+            // Test 3: Get User
+            if (accessToken) {
+                try {
+                    const userRes = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/users/me`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                    });
+                    const userData = await userRes.json();
+                    results.push({ test: 'Get Current User', passed: userRes.ok, data: userData });
+                } catch (error) {
+                    results.push({ test: 'Get Current User', passed: false, error: error.message });
+                }
+
+                // Test 4: Get Projects
+                try {
+                    const projectsRes = await fetch(`${API_BASE_URL}${API_V1_PREFIX}/projects`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                    });
+                    const projectsData = await projectsRes.json();
+                    results.push({
+                        test: 'Get Projects',
+                        passed: projectsRes.ok && Array.isArray(projectsData),
+                        data: `${projectsData.length} projects`
+                    });
+                } catch (error) {
+                    results.push({ test: 'Get Projects', passed: false, error: error.message });
+                }
+            }
+
+            // Display results
+            const passedCount = results.filter(r => r.passed).length;
+            const totalCount = results.length;
+            const allPassed = passedCount === totalCount;
+
+            let html = `
+                <div class="test-result ${allPassed ? 'success' : 'error'}">
+                    <h3>${allPassed ? '✅' : '⚠️'} Test Results: ${passedCount}/${totalCount} Passed</h3>
+                    <ul>
+            `;
+
+            results.forEach(result => {
+                html += `
+                    <li>
+                        <strong>${result.passed ? '✅' : '❌'} ${result.test}</strong>
+                        ${result.error ? `<br>Error: ${result.error}` : ''}
+                        ${result.data ? `<br><small>${typeof result.data === 'object' ? JSON.stringify(result.data).substring(0, 100) : result.data}</small>` : ''}
+                    </li>
+                `;
+            });
+
+            html += '</ul></div>';
+            displayResult('allTestsResult', html);
+        }
+
+        // Auto-run health check on load
+        window.addEventListener('load', () => {
+            testHealth();
+
+            // Check if we have tokens in localStorage
+            const storedToken = localStorage.getItem('promptforge_access_token');
+            if (storedToken) {
+                displayResult('loginResult', '✅ Found stored access token', 'success');
+                accessToken = storedToken;
+                refreshToken = localStorage.getItem('promptforge_refresh_token');
+            }
+        });
+    </script>
+</body>
+</html>

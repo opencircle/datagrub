@@ -1,0 +1,40 @@
+Analyze the following advisor-client call transcript and extract all factual information with precision.
+
+Your task is to identify and extract:
+
+**1. Key Entities:**
+- People (names, roles, relationships)
+- Companies and organizations
+- Products, services, or financial instruments mentioned
+- Dates and timeframes
+- Locations
+
+**2. Specific Numbers and Metrics:**
+- Financial figures (amounts, percentages, returns)
+- Account balances or portfolio values
+- Goals or targets mentioned
+- Timelines or durations
+
+**3. Actions and Commitments:**
+- Actions already taken by either party
+- Commitments or promises made
+- Decisions reached during the call
+- Follow-up items or next steps
+
+**4. Explicit Statements:**
+- Direct quotes that represent key facts
+- Client objectives or concerns explicitly stated
+- Advisor recommendations explicitly given
+
+**Important Guidelines:**
+- Extract ONLY verifiable facts from the transcript
+- Do NOT include opinions, interpretations, or assumptions
+- Do NOT add context not present in the transcript
+- Use bullet points for clear organization
+- Quote directly when critical facts are stated
+
+**Transcript:**
+{{transcript}}
+
+**Output Format:**
+Provide a structured list organized by category. Be precise and factual.

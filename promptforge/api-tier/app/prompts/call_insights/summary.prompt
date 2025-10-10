@@ -1,0 +1,39 @@
+Create a concise executive summary based on the extracted facts and insights.
+
+**Extracted Facts:**
+{{facts}}
+
+**Key Insights and Reasoning:**
+{{reasoning}}
+
+Your task is to synthesize the analysis into a clear, actionable summary covering:
+
+**1. Main Purpose:**
+- What was the primary reason for this call?
+- What topic or issue was being addressed?
+
+**2. Key Outcomes and Decisions:**
+- What decisions were made?
+- What recommendations were given and accepted?
+- What was accomplished or resolved?
+
+**3. Action Items:**
+- What specific next steps were agreed upon?
+- Who is responsible for what?
+- What are the timelines?
+
+**4. Overall Sentiment:**
+- What is the tone and mood of the interaction?
+- How does the client feel about the discussion?
+- Is the relationship positive and productive?
+
+**Guidelines:**
+- Write 4-6 concise paragraphs
+- Use clear, professional language
+- Focus on what matters most
+- Avoid jargon unless necessary
+- Make it actionable for the reader
+- Highlight critical items that need attention
+
+**Output Format:**
+Write a flowing narrative summary that someone who wasn't on the call can quickly understand. This should be suitable for internal notes or management review.

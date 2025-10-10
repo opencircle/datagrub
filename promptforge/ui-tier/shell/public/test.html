@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { font-size: 36px; margin-bottom: 20px; }
+        .status {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { color: #4ade80; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Server is Working!</h1>
+        <div class="status">
+            <p><span class="success">✓</span> Webpack dev server is running</p>
+            <p><span class="success">✓</span> Port 3000 is accessible</p>
+            <p><span class="success">✓</span> HTML is being served</p>
+        </div>
+        <h2>The issue is with React mounting</h2>
+        <p>Since you can see this test page, the server is working perfectly.</p>
+        <p>The blank page on the main app is due to a JavaScript error.</p>
+
+        <h3>Next Steps:</h3>
+        <ol>
+            <li>Open Chrome DevTools (F12)</li>
+            <li>Go back to http://localhost:3000</li>
+            <li>Click the Console tab</li>
+            <li>Look for RED error messages</li>
+            <li>Copy the error message and share it</li>
+        </ol>
+    </div>
+
+    <script>
+        console.log('✅ Test page loaded successfully');
+        console.log('✅ JavaScript is executing');
+        console.log('Next: Check http://localhost:3000 console for errors');
+    </script>
+</body>
+</html>

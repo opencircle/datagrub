@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/rohitiyer/datagrub/**)",
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(ln:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(psql:*)",
+      "Bash(docker exec:*)",
+      "Bash(find:*)",
+      "Bash(alembic revision:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(alembic upgrade:*)",
+      "Bash(curl:*)",
+      "Bash(alembic:*)",
+      "Bash(bunx CC:*)",
+      "Bash(npm install:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,0 +1,60 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: promptforge-postgres
+    environment:
+      POSTGRES_USER: promptforge
+      POSTGRES_PASSWORD: promptforge
+      POSTGRES_DB: promptforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promptforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache and Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: promptforge-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    build:
+      context: ./api-tier
+      dockerfile: Dockerfile
+    container_name: promptforge-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://promptforge:promptforge@postgres:5432/promptforge
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: your-secret-key-change-in-production-min-32-chars
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./api-tier:/app
+      - ./database-tier:/database-tier
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+  redis_data:

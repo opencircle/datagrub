@@ -1,0 +1,67 @@
+# FastAPI and ASGI server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# Redis
+redis==5.0.1
+
+# Authentication and security
+python-jose[cryptography]==3.3.0
+passlib==1.7.4
+bcrypt==4.0.1
+python-dotenv==1.0.0
+
+# Pydantic
+pydantic[email]==2.5.3
+pydantic-settings==2.1.0
+email-validator==2.1.0
+
+# CORS
+python-multipart==0.0.6
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
+httpx==0.26.0
+
+# Development
+black==23.12.1
+ruff==0.1.11
+
+# Evaluation Abstraction Layer (EAL)
+# Sandboxed execution for custom evaluations
+RestrictedPython==6.2
+
+# LLM-as-Judge providers
+openai>=1.10.0  # For GPT-4 judge evaluations
+anthropic>=0.18.0  # For Claude judge evaluations
+
+# Vendor evaluation libraries (Tier 1 - 87 evaluations)
+# NOTE: Vendor libraries have large dependency trees (~5 min build time)
+# For faster builds, install via script after container start:
+#   docker-compose exec api bash /app/scripts/install_vendor_libraries.sh
+#
+# For production deployment, uncomment below and rebuild image
+
+# deepeval>=0.21.0  # DeepEval evaluation framework (15 evaluations)
+# ragas>=0.1.0  # Ragas evaluation framework (23 evaluations)
+# mlflow>=2.10.0  # MLflow evaluation tracking (18 evaluations)
+# deepchecks-llm-client>=0.1.0  # Deepchecks LLM evaluation (15 evaluations)
+# arize-phoenix>=3.0.0  # Arize Phoenix observability (16 evaluations)
+# arize-phoenix-evals>=0.1.0  # Phoenix evaluation functions
+
+# Additional dependencies for vendor libraries
+# datasets>=2.16.0  # For Ragas and DeepEval (required)
+# nest-asyncio>=1.6.0  # For async compatibility (required)
+# textstat>=0.7.0  # For MLflow readability metrics
+# rouge-score>=0.1.0  # For MLflow ROUGE metrics
+# tiktoken>=0.5.0  # For token counting
+# nltk>=3.8.0  # For text analysis
+# sqlparse>=0.4.0  # For SQL parsing

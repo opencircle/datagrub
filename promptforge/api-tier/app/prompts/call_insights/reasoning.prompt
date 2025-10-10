@@ -1,0 +1,40 @@
+Based on the extracted facts, provide comprehensive insights and analysis.
+
+**Extracted Facts:**
+{{facts}}
+
+Your task is to analyze and provide:
+
+**1. Key Insights and Patterns:**
+- What are the most important takeaways from this call?
+- What patterns or trends emerge from the discussion?
+- What is the client's primary situation or challenge?
+- What opportunities were identified?
+
+**2. Notable Concerns or Risks:**
+- Are there any red flags or concerns raised?
+- What risks were discussed (financial, personal, operational)?
+- Are there any gaps in information or understanding?
+- What challenges need to be addressed?
+
+**3. Underlying Themes and Motivations:**
+- What are the client's core motivations and priorities?
+- What emotional or psychological factors are present?
+- What unstated needs or concerns might exist?
+- What is the relationship dynamic between advisor and client?
+
+**4. Strategic Considerations:**
+- What are the implications of the facts discussed?
+- What options or paths forward are available?
+- What dependencies or constraints exist?
+- What should be prioritized?
+
+**Guidelines:**
+- Go beyond surface-level observations
+- Connect facts to draw meaningful conclusions
+- Identify both explicit and implicit themes
+- Highlight what matters most for decision-making
+- Provide actionable insights
+
+**Output Format:**
+Organize your insights by the four categories above. Be analytical and thoughtful.

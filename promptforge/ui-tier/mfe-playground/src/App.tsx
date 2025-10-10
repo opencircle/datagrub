@@ -1,0 +1,263 @@
+import React, { useState } from 'react';
+import { availableModels, mockSessions, PlaygroundSession, Model } from './mockData';
+import { Play, Zap, Clock, DollarSign, Hash, Settings, History } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const App: React.FC = () => {
+  const [prompt, setPrompt] = useState('');
+  const [response, setResponse] = useState('');
+  const [selectedModel, setSelectedModel] = useState<Model>(availableModels[0]);
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(500);
+  const [topP, setTopP] = useState(0.9);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessions, setSessions] = useState<PlaygroundSession[]>(mockSessions);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const handleSubmit = () => {
+    if (!prompt.trim()) return;
+
+    setIsLoading(true);
+    setResponse('');
+
+    setTimeout(() => {
+      const mockResponse = 'This is a simulated response from ' + selectedModel.name + '. In a real implementation, this would call the actual AI model API with your prompt and parameters.';
+      setResponse(mockResponse);
+      setIsLoading(false);
+
+      const newSession: PlaygroundSession = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        prompt,
+        response: mockResponse,
+        model: selectedModel,
+        parameters: {
+          temperature,
+          maxTokens,
+          topP,
+        },
+        metrics: {
+          latency: Math.random() * 2 + 0.5,
+          tokens: Math.floor(Math.random() * 200 + 50),
+          cost: Math.random() * 0.005,
+        },
+      };
+
+      setSessions([newSession, ...sessions]);
+    }, 1500);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Playground</h1>
+          <p className="text-gray-600 mt-1">Test and experiment with prompts</p>
+        </div>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
+        >
+          <History className="h-4 w-4" />
+          {showHistory ? 'Hide' : 'Show'} History
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Model
+              </label>
+              <select
+                value={selectedModel.id}
+                onChange={(e) => setSelectedModel(availableModels.find(m => m.id === e.target.value)!)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {availableModels.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} ({model.provider})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Prompt
+              </label>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Enter your prompt here..."
+                rows={6}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading || !prompt.trim()}
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              <Play className="h-4 w-4" />
+              {isLoading ? 'Running...' : 'Run Prompt'}
+            </button>
+
+            {(response || isLoading) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4"
+              >
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Response
+                </label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 min-h-[150px]">
+                  {isLoading ? (
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Zap className="h-4 w-4 animate-pulse" />
+                      Generating response...
+                    </div>
+                  ) : (
+                    <p className="text-gray-900 whitespace-pre-wrap">{response}</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Settings className="h-5 w-5 text-gray-700" />
+              <h3 className="font-semibold text-gray-900">Parameters</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">Temperature</label>
+                  <span className="text-sm text-gray-600">{temperature}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">Controls randomness</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">Max Tokens</label>
+                  <span className="text-sm text-gray-600">{maxTokens}</span>
+                </div>
+                <input
+                  type="range"
+                  min="100"
+                  max="2000"
+                  step="100"
+                  value={maxTokens}
+                  onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum response length</p>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">Top P</label>
+                  <span className="text-sm text-gray-600">{topP}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={topP}
+                  onChange={(e) => setTopP(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <p className="text-xs text-gray-500 mt-1">Nucleus sampling</p>
+              </div>
+            </div>
+          </div>
+
+          {sessions.length > 0 && sessions[0].metrics && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Last Run Metrics</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm">Latency</span>
+                  </div>
+                  <span className="font-medium">{sessions[0].metrics.latency.toFixed(2)}s</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Hash className="h-4 w-4" />
+                    <span className="text-sm">Tokens</span>
+                  </div>
+                  <span className="font-medium">{sessions[0].metrics.tokens}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <DollarSign className="h-4 w-4" />
+                    <span className="text-sm">Cost</span>
+                  </div>
+                  <span className="font-medium">${sessions[0].metrics.cost.toFixed(4)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showHistory && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+        >
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900">Session History</h3>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {sessions.map((session) => (
+              <div key={session.id} className="p-4 hover:bg-gray-50 cursor-pointer">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900 mb-1">
+                      {session.model.name}
+                    </p>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {session.prompt}
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-500 ml-4">
+                    {new Date(session.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>{session.metrics.latency.toFixed(2)}s</span>
+                  <span>{session.metrics.tokens} tokens</span>
+                  <span>${session.metrics.cost.toFixed(4)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+export default App;

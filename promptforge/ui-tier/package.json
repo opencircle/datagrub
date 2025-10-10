@@ -1,0 +1,38 @@
+{
+  "name": "promptforge",
+  "version": "1.0.0",
+  "description": "PromptForge - AI Governance & Prompt Management Platform",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd shell && npm install && cd ../mfe-projects && npm install && cd ../mfe-evaluations && npm install && cd ../mfe-playground && npm install && cd ../mfe-traces && npm install && cd ../mfe-policy && npm install && cd ../mfe-models && npm install",
+    "start:shell": "cd shell && npm start",
+    "start:projects": "cd mfe-projects && npm start",
+    "start:evaluations": "cd mfe-evaluations && npm start",
+    "start:playground": "cd mfe-playground && npm start",
+    "start:traces": "cd mfe-traces && npm start",
+    "start:policy": "cd mfe-policy && npm start",
+    "start:models": "cd mfe-models && npm start",
+    "start:all": "concurrently \"npm run start:shell\" \"npm run start:projects\" \"npm run start:evaluations\" \"npm run start:playground\" \"npm run start:traces\" \"npm run start:policy\" \"npm run start:models\"",
+    "build:shell": "cd shell && npm run build",
+    "build:projects": "cd mfe-projects && npm run build",
+    "build:evaluations": "cd mfe-evaluations && npm run build",
+    "build:playground": "cd mfe-playground && npm run build",
+    "build:traces": "cd mfe-traces && npm run build",
+    "build:policy": "cd mfe-policy && npm run build",
+    "build:models": "cd mfe-models && npm run build",
+    "build:all": "npm run build:shell && npm run build:projects && npm run build:evaluations && npm run build:playground && npm run build:traces && npm run build:policy && npm run build:models"
+  },
+  "keywords": [
+    "promptforge",
+    "ai-governance",
+    "prompt-management",
+    "micro-frontend",
+    "module-federation"
+  ],
+  "author": "PromptForge",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "concurrently": "^8.2.0"
+  }
+}

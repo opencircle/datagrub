@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Test</title>
+  <style>
+    body { font-family: Arial; padding: 50px; background: #1a1a2e; color: white; }
+    .status { padding: 20px; background: #16213e; border-radius: 10px; margin: 10px 0; }
+    .error { background: #dc2626; }
+    .success { background: #16a34a; }
+  </style>
+</head>
+<body>
+  <h1>React Mounting Test</h1>
+  <div id="root"></div>
+  <div id="status"></div>
+
+  <script>
+    const status = document.getElementById('status');
+
+    function log(message, isError = false) {
+      const div = document.createElement('div');
+      div.className = 'status ' + (isError ? 'error' : 'success');
+      div.textContent = message;
+      status.appendChild(div);
+      console.log(message);
+    }
+
+    log('✅ HTML loaded');
+    log('✅ JavaScript executing');
+
+    // Try to load the main bundle
+    const script = document.createElement('script');
+    script.src = '/main.js';
+    script.onerror = function() {
+      log('❌ ERROR: Failed to load main.js', true);
+    };
+    script.onload = function() {
+      log('✅ main.js loaded successfully');
+
+      // Check if React mounted
+      setTimeout(() => {
+        const root = document.getElementById('root');
+        if (root && root.innerHTML) {
+          log('✅ SUCCESS: React mounted! Content found in #root');
+        } else {
+          log('❌ ERROR: React did not mount. #root is empty', true);
+          log('Check browser console (F12) for JavaScript errors', true);
+        }
+      }, 2000);
+    };
+
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>

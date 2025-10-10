@@ -1,0 +1,729 @@
+{
+  "analysis_complete": true,
+  "analysis_date": "2025-10-08",
+  "feature_name": "Parent-Child Trace View Enhancement",
+
+  "current_implementation": {
+    "ui_component_paths": {
+      "trace_list": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TracesTable.tsx",
+      "trace_app": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/App.tsx",
+      "trace_detail_modal": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TraceDetailModal.tsx",
+      "filter_bar": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/FilterBar.tsx",
+      "pagination": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/Pagination.tsx"
+    },
+    "api_endpoints": {
+      "list_traces": "GET /api/v1/traces",
+      "get_trace": "GET /api/v1/traces/{trace_id}",
+      "get_trace_detail": "GET /api/v1/traces/{trace_id}/detail"
+    },
+    "current_columns": [
+      "Request ID (trace_id)",
+      "Project (project_name)",
+      "Status",
+      "Model (model_name)",
+      "Duration (total_duration_ms)",
+      "Timestamp (created_at)"
+    ],
+    "ui_framework": {
+      "table_library": "Custom table implementation (not using TanStack Table or MUI DataGrid)",
+      "styling": "TailwindCSS",
+      "icons": "lucide-react",
+      "state_management": "@tanstack/react-query (used in useTraces hook)"
+    },
+    "current_limitations": [
+      "No visualization of parent-child trace relationships",
+      "No trace source indicator (Call Insights vs Playground)",
+      "No parent trace aggregation (model, tokens, cost from children)",
+      "No expandable/collapsible rows for hierarchical data",
+      "Cannot distinguish between normal traces and parent traces with children"
+    ],
+    "existing_parent_child_logic": {
+      "location": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/services/call_insights_service.py",
+      "implementation": "DTA (Dynamic Temperature Adjustment) 3-stage pipeline creates parent trace and 3 child traces",
+      "metadata_structure": {
+        "parent_trace": {
+          "metadata": {
+            "source": "call_insights",
+            "pii_redacted": false,
+            "stage_count": 3
+          }
+        },
+        "child_trace": {
+          "metadata": {
+            "parent_trace_id": "UUID of parent trace",
+            "stage": "Stage 1: Fact Extraction | Stage 2: Reasoning & Insights | Stage 3: Summary Synthesis",
+            "source": "call_insights",
+            "system_prompt": "custom system prompt if provided"
+          }
+        }
+      },
+      "playground_traces": {
+        "metadata": {
+          "source": "playground",
+          "environment": "playground"
+        }
+      }
+    },
+    "data_models": {
+      "trace_database_model": {
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/models/trace.py",
+        "has_parent_child_info": "No explicit parent_trace_id column - stored in trace_metadata JSON",
+        "has_source_field": "No explicit source column - stored in trace_metadata JSON",
+        "fields": [
+          "id", "trace_id", "name", "status", "input_data", "output_data", "trace_metadata",
+          "total_duration_ms", "input_tokens", "output_tokens", "total_tokens", "total_cost",
+          "model_name", "provider", "environment", "retry_count", "user_id", "error_message",
+          "error_type", "project_id", "prompt_version_id", "model_id", "created_at", "updated_at"
+        ]
+      },
+      "trace_list_api_response": {
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/schemas/trace.py",
+        "model": "TraceListItem",
+        "fields": [
+          "id", "trace_id", "project_name", "status", "model_name", "provider",
+          "input_tokens", "output_tokens", "total_tokens", "total_duration_ms", "total_cost",
+          "environment", "retry_count", "created_at", "user_email"
+        ],
+        "has_parent_child_info": false,
+        "has_source_field": false,
+        "has_aggregations": false
+      }
+    }
+  },
+
+  "design_recommendations": {
+    "ui_structure": {
+      "expandable_rows": {
+        "pattern": "Tree Table / Expandable Accordion Pattern",
+        "visual_design": {
+          "parent_row": {
+            "expand_icon": "ChevronRight (collapsed) / ChevronDown (expanded) from lucide-react",
+            "icon_position": "First column (leftmost)",
+            "visual_indicator": "Bold text or subtle background color to distinguish from children"
+          },
+          "child_row": {
+            "indentation": "pl-12 (3rem left padding) for visual hierarchy",
+            "connector_line": "Optional: vertical line from parent to children using CSS border-left",
+            "visual_indicator": "Lighter text color and smaller font size"
+          },
+          "normal_trace_row": {
+            "expand_icon": "No icon (empty space for alignment)",
+            "appearance": "Same as current implementation"
+          }
+        },
+        "interaction": {
+          "expansion_trigger": "Click on expand icon OR entire parent row",
+          "default_state": "Collapsed",
+          "loading_strategy": "Eager load (children included in API response) OR Lazy load (fetch on expansion)",
+          "recommended": "Eager load for better UX (children data is lightweight)"
+        }
+      },
+      "source_column": {
+        "position": "After 'Request ID', before 'Project'",
+        "column_header": "Source",
+        "display_format": {
+          "call_insights": {
+            "text": "Call Insights",
+            "badge_color": "bg-blue-100 text-blue-800",
+            "icon": "Optional: Workflow icon from lucide-react"
+          },
+          "playground": {
+            "text": "Prompt Playground",
+            "badge_color": "bg-purple-100 text-purple-800",
+            "icon": "Optional: Sparkles icon from lucide-react"
+          },
+          "other": {
+            "text": "Other",
+            "badge_color": "bg-gray-100 text-gray-800"
+          }
+        },
+        "filter_implementation": {
+          "type": "Dropdown selector in FilterBar",
+          "options": ["All Sources", "Call Insights", "Prompt Playground"],
+          "api_parameter": "source_filter"
+        }
+      },
+      "aggregation_display": {
+        "parent_row_fields": {
+          "model_name": {
+            "logic": "Show first child's model OR 'Multiple Models' if children use different models",
+            "display": "Same column as normal traces",
+            "tooltip": "List of all child models if multiple"
+          },
+          "total_tokens": {
+            "logic": "SUM(children.total_tokens)",
+            "display": "Show aggregated sum with indicator (e.g., '∑ 12,500')",
+            "column": "New column OR replace duration column for parent rows"
+          },
+          "total_cost": {
+            "logic": "SUM(children.total_cost)",
+            "display": "Show aggregated cost with indicator (e.g., '∑ $0.15')",
+            "format": "Currency format with 4 decimal places"
+          },
+          "child_count": {
+            "logic": "COUNT(children)",
+            "display": "Show in parentheses next to trace name (e.g., 'DTA Pipeline (3 stages)')"
+          }
+        },
+        "child_row_fields": {
+          "all_fields": "Show actual data from child trace",
+          "stage_indicator": "Show stage name from metadata (e.g., 'Stage 1: Fact Extraction')"
+        }
+      },
+      "navigation_behavior": {
+        "parent_row_click": {
+          "action": "Show parent trace detail in modal",
+          "detail_content": "Parent trace metadata, aggregated metrics, list of child traces"
+        },
+        "child_row_click": {
+          "action": "Show child trace detail in modal",
+          "detail_content": "Child trace specific data, link back to parent"
+        },
+        "expand_icon_click": {
+          "action": "Toggle expansion (prevent modal opening)",
+          "implementation": "Use event.stopPropagation() on icon click handler"
+        }
+      }
+    },
+
+    "api_changes": {
+      "enhanced_trace_list_response": {
+        "location": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/schemas/trace.py",
+        "changes": {
+          "TraceListItem": {
+            "new_fields": [
+              {
+                "name": "source",
+                "type": "Optional[str]",
+                "description": "Trace source: 'call_insights', 'playground', or other",
+                "extraction_logic": "trace_metadata.get('source', 'unknown')"
+              },
+              {
+                "name": "has_children",
+                "type": "bool",
+                "description": "True if this is a parent trace with child traces",
+                "extraction_logic": "Query for traces where metadata.parent_trace_id == this.id"
+              },
+              {
+                "name": "child_count",
+                "type": "Optional[int]",
+                "description": "Number of child traces if has_children=True",
+                "extraction_logic": "COUNT of child traces"
+              },
+              {
+                "name": "children",
+                "type": "Optional[List[TraceListItem]]",
+                "description": "List of child traces (eager loaded or null for lazy load)",
+                "recommendation": "Eager load for better UX"
+              },
+              {
+                "name": "parent_trace_id",
+                "type": "Optional[str]",
+                "description": "Parent trace ID if this is a child trace",
+                "extraction_logic": "trace_metadata.get('parent_trace_id')"
+              },
+              {
+                "name": "stage",
+                "type": "Optional[str]",
+                "description": "Stage name if this is a child trace (e.g., 'Stage 1: Fact Extraction')",
+                "extraction_logic": "trace_metadata.get('stage')"
+              },
+              {
+                "name": "aggregated_data",
+                "type": "Optional[AggregatedTraceData]",
+                "description": "Aggregated metrics for parent traces",
+                "fields": {
+                  "total_tokens": "SUM(children.total_tokens)",
+                  "total_cost": "SUM(children.total_cost)",
+                  "model_names": "List of unique model names from children",
+                  "avg_duration_ms": "AVG(children.total_duration_ms)"
+                }
+              }
+            ]
+          },
+          "new_schema": {
+            "name": "AggregatedTraceData",
+            "fields": [
+              {"name": "total_tokens", "type": "int"},
+              {"name": "total_cost", "type": "float"},
+              {"name": "model_names", "type": "List[str]"},
+              {"name": "avg_duration_ms", "type": "Optional[float]"}
+            ]
+          }
+        }
+      },
+      "query_optimization": {
+        "location": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/traces.py - list_traces endpoint",
+        "changes": [
+          {
+            "step": "1. Main query (parent/normal traces)",
+            "logic": "Select traces WHERE parent_trace_id IS NULL OR parent_trace_id NOT IN (subquery of all trace ids)",
+            "note": "This gets parent traces and standalone traces, excluding child traces from main list"
+          },
+          {
+            "step": "2. Child traces query",
+            "logic": "For each parent trace, query traces WHERE metadata->>'parent_trace_id' = parent.id",
+            "optimization": "Use JSON operators: WHERE trace_metadata @> '{\"parent_trace_id\": \"<parent_id>\"}'::jsonb"
+          },
+          {
+            "step": "3. Aggregation",
+            "logic": "Calculate SUM(total_tokens), SUM(total_cost), ARRAY_AGG(DISTINCT model_name) for each parent's children",
+            "implementation": "Use SQL aggregation functions in child query"
+          },
+          {
+            "step": "4. Response construction",
+            "logic": "Build hierarchical response with parent.children = [child1, child2, ...]"
+          }
+        ],
+        "new_query_parameters": [
+          {
+            "name": "source_filter",
+            "type": "Optional[str]",
+            "values": ["call_insights", "playground"],
+            "implementation": "WHERE trace_metadata->>'source' = source_filter"
+          },
+          {
+            "name": "include_children",
+            "type": "bool",
+            "default": true,
+            "description": "Whether to include child traces in response (for performance tuning)"
+          }
+        ]
+      },
+      "alternative_lazy_load_endpoint": {
+        "endpoint": "GET /api/v1/traces/{parent_trace_id}/children",
+        "purpose": "Fetch child traces on demand when parent is expanded",
+        "response": "List[TraceListItem]",
+        "benefits": "Reduced initial load time for large datasets",
+        "drawbacks": "Extra API call, more complex state management",
+        "recommendation": "Not needed initially - eager load is sufficient for MVP"
+      }
+    },
+
+    "data_model_changes": {
+      "database_schema": {
+        "changes_required": false,
+        "reason": "trace_metadata JSON field already stores parent_trace_id and stage",
+        "optimization_suggestion": {
+          "add_index": "CREATE INDEX idx_trace_metadata_parent_trace_id ON traces USING GIN ((trace_metadata->'parent_trace_id'))",
+          "add_index_source": "CREATE INDEX idx_trace_metadata_source ON traces USING GIN ((trace_metadata->'source'))",
+          "benefit": "Faster queries for parent-child relationships and source filtering"
+        }
+      },
+      "typescript_interfaces": {
+        "location": "/Users/rohitiyer/datagrub/promptforge/ui-tier/shared/services/traceService.ts",
+        "new_interfaces": [
+          {
+            "name": "AggregatedTraceData",
+            "code": "export interface AggregatedTraceData {\n  total_tokens: number;\n  total_cost: number;\n  model_names: string[];\n  avg_duration_ms?: number;\n}"
+          },
+          {
+            "name": "EnhancedTraceListItem (extends TraceListItem)",
+            "code": "export interface EnhancedTraceListItem extends TraceListItem {\n  source?: string;\n  has_children: boolean;\n  child_count?: number;\n  children?: EnhancedTraceListItem[];\n  parent_trace_id?: string;\n  stage?: string;\n  aggregated_data?: AggregatedTraceData;\n}"
+          }
+        ],
+        "update_existing": "Replace TraceListItem usage with EnhancedTraceListItem in TracesTable component"
+      }
+    }
+  },
+
+  "implementation_plan": {
+    "phase_1_backend": [
+      {
+        "step": 1,
+        "task": "Create AggregatedTraceData Pydantic schema in trace.py",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/schemas/trace.py",
+        "details": "Define schema with total_tokens, total_cost, model_names, avg_duration_ms fields"
+      },
+      {
+        "step": 2,
+        "task": "Enhance TraceListItem schema with parent-child fields",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/schemas/trace.py",
+        "details": "Add source, has_children, child_count, children, parent_trace_id, stage, aggregated_data fields"
+      },
+      {
+        "step": 3,
+        "task": "Update list_traces endpoint query logic",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/traces.py",
+        "details": [
+          "Filter main query to exclude child traces (WHERE parent_trace_id IS NULL or not exists)",
+          "For each trace, check if it's a parent by querying for children",
+          "If parent, query child traces and calculate aggregations",
+          "Build hierarchical response with children array"
+        ]
+      },
+      {
+        "step": 4,
+        "task": "Add source_filter query parameter",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/traces.py",
+        "details": "Add WHERE clause: trace_metadata->>'source' = source_filter when parameter provided"
+      },
+      {
+        "step": 5,
+        "task": "Add database indexes for performance",
+        "file": "Create new Alembic migration",
+        "details": [
+          "CREATE INDEX idx_trace_metadata_parent_trace_id ON traces USING GIN ((trace_metadata->'parent_trace_id'))",
+          "CREATE INDEX idx_trace_metadata_source ON traces USING GIN ((trace_metadata->'source'))"
+        ]
+      },
+      {
+        "step": 6,
+        "task": "Update trace_metadata extraction in response building",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/traces.py",
+        "details": "Extract source, stage, parent_trace_id from trace_metadata JSON and populate response fields"
+      }
+    ],
+
+    "phase_2_frontend": [
+      {
+        "step": 1,
+        "task": "Update TypeScript interfaces for enhanced trace data",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/shared/services/traceService.ts",
+        "details": [
+          "Create AggregatedTraceData interface",
+          "Create EnhancedTraceListItem interface extending TraceListItem",
+          "Update TraceListResponse to use EnhancedTraceListItem[]"
+        ]
+      },
+      {
+        "step": 2,
+        "task": "Add source filter to FilterBar component",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/FilterBar.tsx",
+        "details": [
+          "Add source dropdown: All Sources, Call Insights, Prompt Playground",
+          "Add sourceFilter state and onSourceFilterChange prop",
+          "Style dropdown consistently with existing filters"
+        ]
+      },
+      {
+        "step": 3,
+        "task": "Update App.tsx to handle source filtering",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/App.tsx",
+        "details": [
+          "Add sourceFilter state",
+          "Pass to useTraces hook as source_filter parameter",
+          "Pass to FilterBar component"
+        ]
+      },
+      {
+        "step": 4,
+        "task": "Enhance TracesTable with expandable rows",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TracesTable.tsx",
+        "details": [
+          "Add expansion state: useState<Set<string>>(new Set())",
+          "Add Source column after Request ID",
+          "Add expand/collapse icon column (first column)",
+          "Render parent rows with aggregated data",
+          "Render child rows with indentation when parent is expanded",
+          "Handle click events: expand icon vs row click",
+          "Add visual indicators: bold parent rows, indented children"
+        ]
+      },
+      {
+        "step": 5,
+        "task": "Create SourceBadge component",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/SourceBadge.tsx",
+        "details": [
+          "Accept source prop: 'call_insights' | 'playground' | string",
+          "Render badge with appropriate color and text",
+          "Export for use in TracesTable"
+        ]
+      },
+      {
+        "step": 6,
+        "task": "Update TraceDetailModal for parent trace details",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TraceDetailModal.tsx",
+        "details": [
+          "Add source badge to header",
+          "Show child traces section if has_children=true",
+          "Add link to parent trace if parent_trace_id exists",
+          "Display stage information for child traces"
+        ]
+      },
+      {
+        "step": 7,
+        "task": "Update table columns to show aggregations",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TracesTable.tsx",
+        "details": [
+          "Model column: show aggregated_data.model_names or model_name",
+          "Add Total Tokens column: show aggregated_data.total_tokens or total_tokens",
+          "Update Cost column: show aggregated_data.total_cost or total_cost",
+          "Add visual indicators: ∑ symbol for aggregated values"
+        ]
+      }
+    ],
+
+    "phase_3_testing": [
+      {
+        "step": 1,
+        "task": "Write API tests for enhanced trace list endpoint",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/tests/api/v1/test_traces.py",
+        "details": [
+          "Test parent trace with children returns correct structure",
+          "Test child traces are not in main list (only under parent.children)",
+          "Test aggregated_data calculations are correct",
+          "Test source_filter parameter filters correctly",
+          "Test normal traces (no children) still work correctly"
+        ]
+      },
+      {
+        "step": 2,
+        "task": "Write UI component tests",
+        "file": "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/__tests__/TracesTable.test.tsx",
+        "details": [
+          "Test expandable rows toggle correctly",
+          "Test parent row shows aggregated data",
+          "Test child rows are indented and show stage info",
+          "Test source badge renders correctly",
+          "Test row click handlers (parent vs child vs expand icon)"
+        ]
+      },
+      {
+        "step": 3,
+        "task": "Integration test for Call Insights pipeline",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/tests/mfe_insights/test_call_insights_traces.py",
+        "details": [
+          "Execute Call Insights analysis (creates parent + 3 children)",
+          "Verify trace list endpoint returns parent with children",
+          "Verify aggregations match sum of children",
+          "Verify source filter='call_insights' includes this trace"
+        ]
+      },
+      {
+        "step": 4,
+        "task": "Manual testing scenarios",
+        "details": [
+          "Create Call Insights analysis, verify parent-child display in UI",
+          "Create Playground trace, verify source badge shows correctly",
+          "Test expansion/collapse of parent traces",
+          "Test navigation: parent detail vs child detail modals",
+          "Test filtering by source",
+          "Test pagination with parent-child traces"
+        ]
+      }
+    ],
+
+    "phase_4_documentation": [
+      {
+        "step": 1,
+        "task": "Update Phase2_Trace_Dashboard.md",
+        "file": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Trace_Dashboard.md",
+        "details": [
+          "Add section: Parent-Child Trace Visualization",
+          "Document trace source field and filtering",
+          "Document aggregation logic for parent traces",
+          "Add screenshots/wireframes of expandable rows UI",
+          "Document metadata structure for parent-child relationships"
+        ]
+      },
+      {
+        "step": 2,
+        "task": "Update API documentation",
+        "file": "/Users/rohitiyer/datagrub/promptforge/api-tier/docs/api_reference.md (or OpenAPI schema)",
+        "details": [
+          "Document enhanced TraceListItem schema",
+          "Document source_filter parameter",
+          "Document aggregated_data structure",
+          "Add example responses showing parent-child traces"
+        ]
+      },
+      {
+        "step": 3,
+        "task": "Add developer guide for creating parent-child traces",
+        "file": "/Users/rohitiyer/datagrub/promptforge/docs/developer_guide_parent_child_traces.md",
+        "details": [
+          "How to create parent trace with metadata",
+          "How to create child traces with parent_trace_id reference",
+          "Best practices for stage naming and metadata",
+          "How aggregations are calculated"
+        ]
+      }
+    ]
+  },
+
+  "files_to_modify": {
+    "api": [
+      "/Users/rohitiyer/datagrub/promptforge/api-tier/app/schemas/trace.py",
+      "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/traces.py",
+      "New: /Users/rohitiyer/datagrub/promptforge/api-tier/alembic/versions/xxxx_add_trace_metadata_indexes.py"
+    ],
+    "ui": [
+      "/Users/rohitiyer/datagrub/promptforge/ui-tier/shared/services/traceService.ts",
+      "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TracesTable.tsx",
+      "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/FilterBar.tsx",
+      "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/App.tsx",
+      "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/TraceDetailModal.tsx",
+      "New: /Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/SourceBadge.tsx"
+    ],
+    "tests": [
+      "New: /Users/rohitiyer/datagrub/promptforge/api-tier/tests/api/v1/test_traces_parent_child.py",
+      "New: /Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-traces/src/components/__tests__/TracesTable.test.tsx",
+      "New: /Users/rohitiyer/datagrub/promptforge/api-tier/tests/mfe_insights/test_call_insights_traces.py"
+    ],
+    "docs": [
+      "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Trace_Dashboard.md",
+      "New: /Users/rohitiyer/datagrub/promptforge/docs/developer_guide_parent_child_traces.md"
+    ]
+  },
+
+  "ui_framework_recommendation": {
+    "chosen_approach": "Enhanced Custom Table Implementation",
+    "reasoning": [
+      "Current codebase uses custom table with TailwindCSS - consistency is important",
+      "TanStack Table v8 would require significant refactoring and new learning curve",
+      "Material-UI DataGrid adds heavy dependency and different styling paradigm",
+      "Custom implementation provides full control and matches existing patterns"
+    ],
+    "implementation_strategy": {
+      "expandable_rows": "Use React state (Set<string>) to track expanded parent IDs",
+      "rendering": "Conditionally render children rows after parent when expanded",
+      "styling": "Use TailwindCSS classes for indentation (pl-12) and visual hierarchy",
+      "icons": "lucide-react (already in use) for ChevronRight/ChevronDown"
+    },
+    "code_example": {
+      "expansion_state": "const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());",
+      "toggle_handler": "const toggleExpand = (traceId: string) => {\n  setExpandedParents(prev => {\n    const next = new Set(prev);\n    if (next.has(traceId)) {\n      next.delete(traceId);\n    } else {\n      next.add(traceId);\n    }\n    return next;\n  });\n};",
+      "rendering_logic": "traces.flatMap(trace => {\n  const rows = [trace];\n  if (trace.has_children && expandedParents.has(trace.id)) {\n    rows.push(...(trace.children || []));\n  }\n  return rows;\n}).map(trace => <TraceRow key={trace.id} trace={trace} isChild={!!trace.parent_trace_id} />)"
+    }
+  },
+
+  "technical_considerations": {
+    "performance": [
+      {
+        "concern": "Large parent traces with many children",
+        "solution": "Limit children to 100 per parent, add pagination for children if needed",
+        "indexing": "Database indexes on metadata JSON fields for fast queries"
+      },
+      {
+        "concern": "Initial page load with many parent traces",
+        "solution": "Eager load is fine for MVP (typical: <20 parent traces per page)",
+        "future_optimization": "Add lazy load endpoint if performance degrades"
+      }
+    ],
+    "edge_cases": [
+      {
+        "case": "Parent trace with 0 children (orphaned parent)",
+        "handling": "Show as normal trace, has_children=false"
+      },
+      {
+        "case": "Child trace without parent (orphaned child)",
+        "handling": "Show as normal trace, parent_trace_id exists but parent not found"
+      },
+      {
+        "case": "Nested parent-child (child is also a parent)",
+        "handling": "Not supported in current design - only 1 level of hierarchy"
+      },
+      {
+        "case": "Different sources with same trace_id",
+        "handling": "Use database ID (UUID) as unique identifier, not trace_id"
+      }
+    ],
+    "accessibility": [
+      "Add aria-expanded attribute to expand buttons",
+      "Add aria-label for screen readers: 'Expand to show child traces'",
+      "Ensure keyboard navigation works: Enter key to toggle expansion",
+      "Maintain focus management when expanding/collapsing rows"
+    ],
+    "state_management": [
+      "Expansion state is local to TracesTable component (no global state needed)",
+      "Source filter state in App.tsx (shared with FilterBar and useTraces hook)",
+      "React Query handles trace data caching and refetching"
+    ]
+  },
+
+  "source_detection_logic": {
+    "call_insights": {
+      "identifier": "trace_metadata.source === 'call_insights'",
+      "display_name": "Call Insights",
+      "description": "3-stage DTA pipeline analysis",
+      "parent_characteristics": {
+        "has_children": true,
+        "child_count": 3,
+        "metadata_keys": ["source", "pii_redacted", "stage_count"]
+      },
+      "child_characteristics": {
+        "metadata_keys": ["parent_trace_id", "stage", "source", "system_prompt"]
+      }
+    },
+    "playground": {
+      "identifier": "trace_metadata.source === 'playground' OR environment === 'playground'",
+      "display_name": "Prompt Playground",
+      "description": "Interactive prompt testing",
+      "characteristics": {
+        "has_children": false,
+        "metadata_keys": ["source", "environment"]
+      }
+    },
+    "unknown": {
+      "identifier": "No source in metadata",
+      "display_name": "Other",
+      "fallback": true
+    }
+  },
+
+  "aggregation_calculation_examples": {
+    "example_parent_trace": {
+      "trace_id": "parent-uuid-123",
+      "name": "DTA Pipeline",
+      "source": "call_insights",
+      "has_children": true,
+      "child_count": 3,
+      "children": [
+        {
+          "trace_id": "child-1",
+          "stage": "Stage 1: Fact Extraction",
+          "model_name": "gpt-4o-mini",
+          "total_tokens": 1500,
+          "total_cost": 0.0045
+        },
+        {
+          "trace_id": "child-2",
+          "stage": "Stage 2: Reasoning & Insights",
+          "model_name": "gpt-4o-mini",
+          "total_tokens": 2000,
+          "total_cost": 0.0060
+        },
+        {
+          "trace_id": "child-3",
+          "stage": "Stage 3: Summary Synthesis",
+          "model_name": "gpt-4o-mini",
+          "total_tokens": 1200,
+          "total_cost": 0.0036
+        }
+      ],
+      "aggregated_data": {
+        "total_tokens": 4700,
+        "total_cost": 0.0141,
+        "model_names": ["gpt-4o-mini"],
+        "avg_duration_ms": 850
+      }
+    },
+    "display_in_table": {
+      "Model": "gpt-4o-mini (all stages)",
+      "Total Tokens": "∑ 4,700",
+      "Total Cost": "∑ $0.0141",
+      "Duration": "Avg 850ms"
+    }
+  },
+
+  "ready_for_implementation": true,
+
+  "next_steps": [
+    "Review this analysis with product team",
+    "Prioritize: Backend changes (Phase 1) before Frontend (Phase 2)",
+    "Create feature branch: feature/parent-child-trace-view",
+    "Start with API schema changes and endpoint enhancements",
+    "Implement UI components with new data structure",
+    "Write comprehensive tests",
+    "Update documentation"
+  ],
+
+  "estimated_effort": {
+    "phase_1_backend": "2-3 days",
+    "phase_2_frontend": "3-4 days",
+    "phase_3_testing": "2 days",
+    "phase_4_documentation": "1 day",
+    "total": "8-10 days (1.5-2 sprints)"
+  }
+}
