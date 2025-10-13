@@ -28,7 +28,9 @@
       "Bash(tree:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python -m pytest --collect-only)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

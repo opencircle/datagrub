@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -12,12 +13,13 @@ export interface ModalProps {
   showCloseButton?: boolean;
 }
 
+// Updated size classes following Modal Design System standards
 const sizeClasses = {
-  sm: 'max-w-md',
-  md: 'max-w-2xl',
-  lg: 'max-w-4xl',
-  xl: 'max-w-6xl',
-  full: 'max-w-[95vw]',
+  sm: '32rem',  // 512px
+  md: '48rem',  // 768px
+  lg: '56rem',  // 896px - matches TraceDetailModal
+  xl: '72rem',  // 1152px
+  full: '95vw',
 };
 
 export const Modal: React.FC<ModalProps> = ({
@@ -47,53 +49,91 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  return (
+  // Modal content following Modal Design System standards
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Design System: 60% opacity, 8px blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-50"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 9999
+            }}
           />
 
-          {/* Modal */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Modal Container - Design System: Centered, generous spacing */}
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              display: 'flex',
+              minHeight: '100%',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              padding: '3rem 1rem 2rem 1rem'
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className={`bg-white dark:bg-neutral-800 rounded-xl shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col`}
               onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: sizeClasses[size],
+                backgroundColor: 'white',
+                borderRadius: '1rem',
+                boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)',
+                maxHeight: '90vh',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden'
+              }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
-                <h2 className="text-xl font-semibold text-neutral-700">
+              {/* Header - Design System: 2rem 3rem padding */}
+              <div
+                className="flex items-center justify-between border-b border-neutral-200 bg-white rounded-t-2xl sticky top-0 z-10"
+                style={{ padding: '2rem 3rem' }}
+              >
+                <h2 className="text-2xl font-semibold text-neutral-900">
                   {title}
                 </h2>
                 {showCloseButton && (
                   <button
                     onClick={onClose}
-                    className="p-1 rounded-md hover:bg-neutral-100 transition-colors"
+                    className="text-neutral-500 hover:text-neutral-700 transition-all duration-200 rounded-xl p-2.5 hover:bg-neutral-100"
                     aria-label="Close modal"
                   >
-                    <X className="w-5 h-5 text-neutral-500" />
+                    <X className="h-5 w-5" />
                   </button>
                 )}
               </div>
 
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-6">
+              {/* Content - Design System: 3rem padding */}
+              <div
+                className="flex-1 overflow-y-auto"
+                style={{ padding: '3rem' }}
+              >
                 {children}
               </div>
 
-              {/* Footer */}
+              {/* Footer - Design System: Consistent padding */}
               {footer && (
-                <div className="px-6 py-4 border-t border-neutral-200 bg-neutral-50">
+                <div
+                  className="border-t border-neutral-200 bg-neutral-50"
+                  style={{ padding: '1.5rem 3rem' }}
+                >
                   {footer}
                 </div>
               )}
@@ -103,4 +143,7 @@ export const Modal: React.FC<ModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  // Render in portal to escape stacking contexts
+  return createPortal(modalContent, document.body);
 };

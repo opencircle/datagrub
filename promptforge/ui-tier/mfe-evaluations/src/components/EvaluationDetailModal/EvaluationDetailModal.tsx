@@ -10,6 +10,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { evaluationService, EvaluationDetailResponse } from '../../../../shared/services/evaluationService';
 import {
   X,
@@ -93,52 +94,136 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
   };
 
   if (loading) {
-    return (
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        onClick={onClose}
-      >
-        <div className="bg-white rounded-xl p-8" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-3">
-            <Clock className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-lg">Loading evaluation details...</span>
+    const loadingContent = (
+      <>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999
+          }}
+          onClick={onClose}
+        />
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '3rem 1rem'
+          }}
+        >
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            padding: '3rem',
+            boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <Clock className="h-6 w-6 animate-spin text-primary" />
+              <span className="text-lg">Loading evaluation details...</span>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
+    return createPortal(loadingContent, document.body);
   }
 
   if (error || !detail) {
-    return (
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        onClick={onClose}
-      >
-        <div className="bg-white rounded-xl p-8 max-w-md" onClick={(e) => e.stopPropagation()}>
-          <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
-          <p className="text-neutral-600 mb-4">{error || 'Evaluation not found'}</p>
-          <button
-            onClick={onClose}
-            className="w-full px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200"
-          >
-            Close
-          </button>
+    const errorContent = (
+      <>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 9999
+          }}
+          onClick={onClose}
+        />
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '3rem 1rem'
+          }}
+        >
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            padding: '3rem',
+            maxWidth: '32rem',
+            boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
+            <p className="text-neutral-600 mb-4">{error || 'Evaluation not found'}</p>
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200"
+            >
+              Close
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
+    return createPortal(errorContent, document.body);
   }
 
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+  const modalContent = (
+    <>
+      {/* Backdrop - Design System: 60% opacity, 8px blur */}
       <div
-        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-xl"
-        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 9999
+        }}
+        onClick={onClose}
+      />
+
+      {/* Modal Container - Design System */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          minHeight: '100%',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '3rem 1rem 2rem 1rem'
+        }}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-neutral-200 px-8 py-6 rounded-t-2xl">
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '56rem',
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header - Design System: 2rem 3rem padding */}
+          <div className="sticky top-0 bg-white border-b border-neutral-200 rounded-t-2xl" style={{ padding: '2rem 3rem' }}>
           <div className="flex items-start justify-between">
             <div className="flex-1">
               {/* Title and Status Badge */}
@@ -192,7 +277,8 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
           </div>
         </div>
 
-        <div className="px-8 py-6 space-y-6">
+        {/* Content - Design System: 3rem padding */}
+        <div className="flex-1 overflow-y-auto" style={{ padding: '3rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
           {/* What This Evaluates */}
           {detail.description && (
             <div>
@@ -365,8 +451,8 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
           </details>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-neutral-50 border-t border-neutral-200 px-8 py-4 rounded-b-2xl flex items-center justify-end">
+        {/* Footer - Design System */}
+        <div className="sticky bottom-0 bg-neutral-50 border-t border-neutral-200 rounded-b-2xl flex items-center justify-end" style={{ padding: '1.5rem 3rem' }}>
           <button
             onClick={onClose}
             className="px-6 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-100 transition-colors"
@@ -374,7 +460,11 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
             Close
           </button>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
+
+  // Render in portal to escape stacking contexts
+  return createPortal(modalContent, document.body);
 };

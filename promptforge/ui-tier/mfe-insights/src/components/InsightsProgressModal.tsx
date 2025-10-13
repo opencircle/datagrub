@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 
 interface Props {
@@ -51,10 +52,45 @@ export const InsightsProgressModal: React.FC<Props> = ({ isVisible }) => {
     { id: 2, label: 'Stage 3: Summary Synthesis', emoji: '📝', description: 'Creating concise summary of key points...' },
   ];
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-        <div className="text-center mb-6">
+  const modalContent = (
+    <>
+      {/* Backdrop - Design System: 60% opacity, 8px blur */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 9999
+        }}
+      />
+
+      {/* Modal Container - Design System: Centered, generous spacing */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          display: 'flex',
+          minHeight: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '3rem 1rem'
+        }}
+      >
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '32rem',
+            backgroundColor: 'white',
+            borderRadius: '1rem',
+            boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)',
+            padding: '3rem',
+            overflow: 'hidden'
+          }}
+        >
+        <div className="text-center" style={{ marginBottom: '2rem' }}>
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FF385C]/10 rounded-full mb-4">
             <Sparkles className="h-8 w-8 text-[#FF385C] animate-pulse" />
           </div>
@@ -67,7 +103,7 @@ export const InsightsProgressModal: React.FC<Props> = ({ isVisible }) => {
         </div>
 
         {/* Stage Progress */}
-        <div className="space-y-3 mb-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
           {stages.map((stage) => (
             <div
               key={stage.id}
@@ -129,9 +165,13 @@ export const InsightsProgressModal: React.FC<Props> = ({ isVisible }) => {
         <div className="mt-4 text-center text-xs text-neutral-500">
           This typically takes 30-45 seconds. Please wait...
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
+
+  // Render in portal to escape stacking contexts
+  return createPortal(modalContent, document.body);
 };
 
 export default InsightsProgressModal;

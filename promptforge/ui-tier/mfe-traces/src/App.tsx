@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import FilterBar from './components/FilterBar';
 import TracesTable from './components/TracesTable';
 import Pagination from './components/Pagination';
@@ -11,6 +11,12 @@ const App: React.FC = () => {
   // URL params for deep linking
   const { traceId } = useParams<{ traceId?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // FALLBACK: If useParams doesn't work, parse URL directly
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const traceIdFromPath = pathSegments.length > 1 ? pathSegments[pathSegments.length - 1] : undefined;
+  const effectiveTraceId = traceId || traceIdFromPath;
 
   // UI State - separated from server state
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,10 +29,12 @@ const App: React.FC = () => {
 
   // Handle deep linking to specific trace
   useEffect(() => {
-    if (traceId) {
-      setSelectedTraceId(traceId);
+    if (effectiveTraceId) {
+      setSelectedTraceId(effectiveTraceId);
+    } else {
+      setSelectedTraceId(null);
     }
-  }, [traceId]);
+  }, [effectiveTraceId]);
 
   const pageSize = 20;
 

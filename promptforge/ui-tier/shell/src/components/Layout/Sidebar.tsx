@@ -48,10 +48,18 @@ export const Sidebar: React.FC = () => {
       <div className={`border-b border-neutral-100 ${isCollapsed ? 'p-4' : 'p-6'} transition-all duration-300`}>
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-[#FF385C]">PromptForge</h1>
-              <p className="text-sm text-neutral-600 font-medium mt-1">AI Governance Platform</p>
-            </div>
+            <NavLink
+              to="/"
+              className="flex-1 cursor-pointer group"
+              aria-label="Go to dashboard"
+            >
+              <h1 className="text-2xl font-bold text-[#FF385C] group-hover:opacity-80 transition-opacity duration-200">
+                PromptForge
+              </h1>
+              <p className="text-sm text-neutral-600 font-medium mt-1 group-hover:text-neutral-700 transition-colors duration-200">
+                AI Governance Platform
+              </p>
+            </NavLink>
           )}
           <button
             onClick={toggleSidebar}

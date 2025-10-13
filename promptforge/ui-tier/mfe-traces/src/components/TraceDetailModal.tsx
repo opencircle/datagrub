@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
 import StatusIndicator from './StatusIndicator';
 import EvaluationResultsTable from './EvaluationResultsTable';
@@ -70,20 +71,49 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+  const modalContent = (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        overflowY: 'auto'
+      }}
+    >
+        {/* Backdrop */}
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(8px)'
+          }}
+          onClick={onClose}
+          aria-hidden="true"
+        />
 
       {/* Modal */}
-      <div className="flex min-h-full items-start justify-center p-4 pt-10">
-        <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl max-h-[90vh] flex flex-col">
+      <div style={{
+        display: 'flex',
+        minHeight: '100%',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '3rem 1rem 2rem 1rem'
+      }}>
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: '56rem',
+          backgroundColor: 'white',
+          borderRadius: '1rem',
+          boxShadow: '0 20px 40px -8px rgba(0, 0, 0, 0.15), 0 8px 16px -4px rgba(0, 0, 0, 0.08)',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
           {/* Fixed Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-neutral-200 bg-white rounded-t-2xl sticky top-0 z-10">
+          <div className="flex items-center justify-between border-b border-neutral-200 bg-white rounded-t-2xl sticky top-0 z-10" style={{ padding: '2rem 3rem' }}>
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900">Trace Details</h2>
               {trace && (
@@ -96,7 +126,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
             </div>
             <button
               onClick={onClose}
-              className="text-neutral-500 hover:text-neutral-700 transition-all duration-200 rounded-xl p-2 hover:bg-neutral-100"
+              className="text-neutral-500 hover:text-neutral-700 transition-all duration-200 rounded-xl p-2.5 hover:bg-neutral-100"
               aria-label="Close modal"
             >
               <X className="h-5 w-5" />
@@ -104,7 +134,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto" style={{ padding: '3rem' }}>
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <div className="text-neutral-600">Loading trace details...</div>
@@ -112,28 +142,28 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
                 {error}
               </div>
             )}
 
             {trace && (
-              <div className="space-y-6">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 {/* Overview Section - Always Expanded */}
                 <Section
                   title="Overview"
                   isExpanded={expandedSections.overview}
                   onToggle={() => toggleSection('overview')}
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 divide-y lg:divide-y-0 divide-gray-100">
-                    <div className="space-y-1">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '3rem 4rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <InfoItem label="Project" value={trace.project_name} />
                       <InfoItem label="Environment" value={trace.environment || 'N/A'} />
                       <InfoItem label="Model" value={trace.model_name || 'N/A'} />
                       <InfoItem label="Provider" value={trace.provider || 'N/A'} />
                       <InfoItem label="User" value={trace.user_email || 'N/A'} />
                     </div>
-                    <div className="space-y-1 pt-4 lg:pt-0">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <InfoItem label="Duration" value={`${trace.total_duration_ms?.toFixed(0) || 0}ms`} />
                       <InfoItem label="Input Tokens" value={trace.input_tokens?.toLocaleString() || '0'} />
                       <InfoItem label="Output Tokens" value={trace.output_tokens?.toLocaleString() || '0'} />
@@ -143,9 +173,9 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                     </div>
                   </div>
                   {trace.error_message && (
-                    <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-xl">
                       <p className="text-sm font-medium text-red-900">Error: {trace.error_type}</p>
-                      <p className="text-sm text-red-700 mt-1">{trace.error_message}</p>
+                      <p className="text-sm text-red-700 mt-2">{trace.error_message}</p>
                     </div>
                   )}
                 </Section>
@@ -156,13 +186,13 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                   isExpanded={expandedSections.prompt}
                   onToggle={() => toggleSection('prompt')}
                 >
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-4">
                         <label className="text-sm font-medium text-neutral-700">Input Data</label>
                         <button
                           onClick={() => copyToClipboard(JSON.stringify(trace.input_data, null, 2), 'input')}
-                          className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1"
+                          className="text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200"
                         >
                           {copiedField === 'input' ? (
                             <>
@@ -175,7 +205,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                           )}
                         </button>
                       </div>
-                      <pre className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto">
+                      <pre className="bg-neutral-50 border border-neutral-200 rounded-xl p-6 text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto">
                         {JSON.stringify(trace.input_data, null, 2)}
                       </pre>
                     </div>
@@ -189,11 +219,11 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                   onToggle={() => toggleSection('response')}
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-4">
                       <label className="text-sm font-medium text-neutral-700">Output Data</label>
                       <button
                         onClick={() => copyToClipboard(JSON.stringify(trace.output_data, null, 2), 'output')}
-                        className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1"
+                        className="text-xs text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200"
                       >
                         {copiedField === 'output' ? (
                           <>
@@ -206,7 +236,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                         )}
                       </button>
                     </div>
-                    <pre className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto">
+                    <pre className="bg-neutral-50 border border-neutral-200 rounded-xl p-6 text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto">
                       {JSON.stringify(trace.output_data, null, 2)}
                     </pre>
                   </div>
@@ -232,13 +262,13 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                     isExpanded={expandedSections.stages}
                     onToggle={() => toggleSection('stages')}
                   >
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {trace.children.map((child, index) => (
-                        <div key={child.id} className="border border-neutral-200 rounded-lg p-4 bg-neutral-50">
+                        <div key={child.id} className="border border-neutral-200 rounded-xl p-8 bg-neutral-50">
                           {/* Stage Header */}
-                          <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <span className="text-xs font-mono bg-neutral-200 text-neutral-700 px-2 py-1 rounded">
+                              <span className="text-xs font-mono bg-neutral-200 text-neutral-700 px-2.5 py-1 rounded-lg">
                                 Stage {index + 1}
                               </span>
                               {child.stage && (
@@ -255,7 +285,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                           </div>
 
                           {/* Metrics */}
-                          <div className="grid grid-cols-3 gap-4 mb-3 text-xs">
+                          <div className="grid grid-cols-3 gap-8 mb-6 text-xs">
                             <div>
                               <span className="text-neutral-600">Tokens:</span>{' '}
                               <span className="font-medium text-neutral-900">
@@ -278,12 +308,12 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
 
                           {/* System Prompt */}
                           {child.input_data?.system_prompt && (
-                            <div className="mb-3">
-                              <div className="flex items-center justify-between mb-1">
+                            <div className="mb-4">
+                              <div className="flex items-center justify-between mb-2">
                                 <label className="text-xs font-medium text-neutral-700">System Prompt</label>
                                 <button
                                   onClick={() => copyToClipboard(child.input_data.system_prompt, `child-system-${child.id}`)}
-                                  className="text-xs text-neutral-600 hover:text-neutral-900 flex items-center gap-1"
+                                  className="text-xs text-neutral-600 hover:text-neutral-900 hover:bg-white/50 flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all duration-200"
                                 >
                                   {copiedField === `child-system-${child.id}` ? (
                                     <>
@@ -296,7 +326,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                                   )}
                                 </button>
                               </div>
-                              <pre className="bg-white border border-neutral-300 rounded p-3 text-xs overflow-x-auto max-h-40 overflow-y-auto">
+                              <pre className="bg-white border border-neutral-300 rounded-lg p-4 text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto">
                                 {child.input_data.system_prompt}
                               </pre>
                             </div>
@@ -304,9 +334,9 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
 
                           {/* Input Prompt */}
                           {child.input_data?.prompt && (
-                            <div className="mb-3">
-                              <label className="text-xs font-medium text-neutral-700 mb-1 block">Input</label>
-                              <pre className="bg-white border border-neutral-300 rounded p-3 text-xs overflow-x-auto max-h-32 overflow-y-auto">
+                            <div className="mb-4">
+                              <label className="text-xs font-medium text-neutral-700 mb-2 block">Input</label>
+                              <pre className="bg-white border border-neutral-300 rounded-lg p-4 text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
                                 {child.input_data.prompt}
                               </pre>
                             </div>
@@ -315,8 +345,8 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                           {/* Output Response */}
                           {child.output_data?.response && (
                             <div>
-                              <label className="text-xs font-medium text-neutral-700 mb-1 block">Output</label>
-                              <pre className="bg-white border border-neutral-300 rounded p-3 text-xs overflow-x-auto max-h-32 overflow-y-auto">
+                              <label className="text-xs font-medium text-neutral-700 mb-2 block">Output</label>
+                              <pre className="bg-white border border-neutral-300 rounded-lg p-4 text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
                                 {child.output_data.response}
                               </pre>
                             </div>
@@ -334,9 +364,9 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                     isExpanded={expandedSections.spans}
                     onToggle={() => toggleSection('spans')}
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-5">
                       {trace.spans.map((span, index) => (
-                        <div key={span.id} className="border border-neutral-200 rounded-lg p-4">
+                        <div key={span.id} className="border border-neutral-200 rounded-xl p-6">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
                               <span className="text-xs font-mono text-neutral-500">#{index + 1}</span>
@@ -363,7 +393,7 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
                   onToggle={() => toggleSection('metadata')}
                 >
                   <div>
-                    <pre className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 text-xs overflow-x-auto max-h-64 overflow-y-auto">
+                    <pre className="bg-neutral-50 border border-neutral-200 rounded-xl p-6 text-xs font-mono overflow-x-auto max-h-64 overflow-y-auto">
                       {JSON.stringify(trace.trace_metadata || {}, null, 2)}
                     </pre>
                   </div>
@@ -375,6 +405,9 @@ export const TraceDetailModal: React.FC<TraceDetailModalProps> = ({
       </div>
     </div>
   );
+
+  // Render modal in a portal to escape parent stacking contexts
+  return createPortal(modalContent, document.body);
 };
 
 // Collapsible Section Component
@@ -387,20 +420,21 @@ interface SectionProps {
 
 const Section: React.FC<SectionProps> = ({ title, isExpanded, onToggle, children }) => {
   return (
-    <div className="border border-neutral-200 rounded-lg overflow-hidden">
+    <div className="border-2 border-neutral-300 rounded-2xl overflow-hidden shadow-md bg-white">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 py-3 bg-neutral-50 hover:bg-neutral-100 transition-colors"
+        className="w-full flex items-center justify-between bg-neutral-50 hover:bg-neutral-100 transition-colors duration-200"
+        style={{ padding: '1.5rem 2rem' }}
         aria-expanded={isExpanded}
       >
-        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
+        <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
         {isExpanded ? (
           <ChevronDown className="h-4 w-4 text-neutral-600" />
         ) : (
           <ChevronRight className="h-4 w-4 text-neutral-600" />
         )}
       </button>
-      {isExpanded && <div className="p-4 bg-white">{children}</div>}
+      {isExpanded && <div className="bg-white" style={{ padding: '2rem' }}>{children}</div>}
     </div>
   );
 };
@@ -413,11 +447,11 @@ interface InfoItemProps {
 
 const InfoItem: React.FC<InfoItemProps> = ({ label, value }) => {
   return (
-    <div className="flex items-baseline gap-3 py-2">
-      <dt className="text-sm font-medium text-neutral-600 min-w-[120px] flex-shrink-0">
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '2rem', padding: '0.75rem 0' }}>
+      <dt className="text-sm font-medium text-neutral-600" style={{ minWidth: '140px', flexShrink: 0 }}>
         {label}:
       </dt>
-      <dd className="text-sm text-neutral-900 font-normal break-words flex-1">
+      <dd className="text-sm text-neutral-900 font-normal break-words" style={{ flex: 1 }}>
         {value}
       </dd>
     </div>
