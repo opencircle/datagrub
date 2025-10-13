@@ -1,5 +1,5 @@
 import React from 'react';
-import InsightsPage from './components/InsightsPage';
+import { AppRouter } from './AppRouter';
 
 /**
  * Error Boundary for capturing and logging MFE errors
@@ -67,12 +67,17 @@ class ErrorBoundary extends React.Component<
 
 /**
  * Bootstrap file for Module Federation
- * Shell provides QueryClientProvider, so we don't wrap here
+ *
+ * IMPORTANT: Shell provides BrowserRouter, so we don't wrap here
+ * - Shell already has router with basename routing
+ * - MFE uses Routes directly (not Router)
+ * - Supports deep linking, bookmarkable URLs, browser back button
+ * - All routes defined in AppRouter.tsx with relative paths
  */
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <InsightsPage />
+      <AppRouter />
     </ErrorBoundary>
   );
 };

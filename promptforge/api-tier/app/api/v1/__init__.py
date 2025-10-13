@@ -3,7 +3,7 @@ API v1 router
 """
 from fastapi import APIRouter
 from app.api.v1 import auth, users, organizations, projects, prompts, evaluations, evaluation_catalog, traces, policies
-from app.api.v1.endpoints import model_providers, playground, call_insights, models
+from app.api.v1.endpoints import model_providers, playground, call_insights, models, insight_comparison
 
 api_router = APIRouter()
 
@@ -20,3 +20,4 @@ api_router.include_router(models.router, prefix="/models", tags=["models"])
 api_router.include_router(model_providers.router, prefix="/model-providers", tags=["model-providers"])
 api_router.include_router(playground.router, prefix="/playground", tags=["playground"])
 api_router.include_router(call_insights.router, prefix="/call-insights", tags=["call-insights"])
+api_router.include_router(insight_comparison.router, prefix="/insights", tags=["insight-comparison"])

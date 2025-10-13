@@ -64,7 +64,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
 
   const getStatusIcon = (passed: boolean | null) => {
     if (passed === null) {
-      return <Clock className="h-4 w-4 text-gray-400" />;
+      return <Clock className="h-4 w-4 text-neutral-400" />;
     }
     return passed
       ? <CheckCircle className="h-4 w-4 text-green-600" />
@@ -72,7 +72,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
   };
 
   const getScoreColor = (score: number | null) => {
-    if (score === null) return 'text-gray-400';
+    if (score === null) return 'text-neutral-400';
     if (score >= 0.8) return 'text-green-600 font-semibold';
     if (score >= 0.5) return 'text-yellow-600 font-semibold';
     return 'text-red-600 font-semibold';
@@ -105,7 +105,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
     return (
       <div className="p-8 text-center">
         <div className="text-red-600 mb-2">Error loading evaluations</div>
-        <div className="text-sm text-gray-600">{error}</div>
+        <div className="text-sm text-neutral-600">{error}</div>
         <button
           onClick={() => refetch()}
           className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark"
@@ -126,8 +126,8 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
       />
 
       {/* Results Info */}
-      <div className="flex items-center justify-between px-6 py-3 bg-gray-50 border-b">
-        <div className="text-sm text-gray-600">
+      <div className="flex items-center justify-between px-6 py-3 bg-neutral-50 border-b">
+        <div className="text-sm text-neutral-600">
           Showing <span className="font-semibold">{evaluations.length}</span> of{' '}
           <span className="font-semibold">{total}</span> evaluations
         </div>
@@ -136,42 +136,42 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
       {/* Table - Matches Traces Table Design */}
       <div className="overflow-x-auto bg-white">
         <table className="min-w-full">
-          <thead className="border-b border-gray-200">
+          <thead className="border-b border-neutral-200">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('timestamp')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('timestamp')}>
                 <div className="flex items-center gap-1">
                   Status{getSortIcon('timestamp')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('prompt_title')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('prompt_title')}>
                 <div className="flex items-center gap-1">
                   Prompt{getSortIcon('prompt_title')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('evaluation_name')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('evaluation_name')}>
                 <div className="flex items-center gap-1">
                   Evaluation{getSortIcon('evaluation_name')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600">
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600">
                 Vendor
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('category')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('category')}>
                 <div className="flex items-center gap-1">
                   Category{getSortIcon('category')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('score')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('score')}>
                 <div className="flex items-center gap-1">
                   Score{getSortIcon('score')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600 cursor-pointer" onClick={() => handleSortChange('model')}>
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600 cursor-pointer" onClick={() => handleSortChange('model')}>
                 <div className="flex items-center gap-1">
                   Model{getSortIcon('model')}
                 </div>
               </th>
-              <th className="px-6 py-4 text-left text-sm font-normal text-gray-600">
+              <th className="px-6 py-4 text-left text-sm font-normal text-neutral-600">
                 Time
               </th>
             </tr>
@@ -179,7 +179,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-neutral-500">
                   <div className="flex items-center justify-center gap-2">
                     <Clock className="h-5 w-5 animate-spin" />
                     Loading evaluations...
@@ -188,7 +188,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
               </tr>
             ) : evaluations.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={8} className="px-6 py-12 text-center text-neutral-500">
                   No evaluations found. Try adjusting your filters.
                 </td>
               </tr>
@@ -199,7 +199,7 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
                   onClick={() => handleRowClick(evaluation.id)}
                   onKeyDown={(e) => e.key === 'Enter' && handleRowClick(evaluation.id)}
                   tabIndex={0}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="hover:bg-neutral-50 cursor-pointer transition-colors"
                   aria-label={`View evaluation ${evaluation.name}`}
                 >
                   <td className="px-6 py-4">
@@ -207,21 +207,21 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
                       {getStatusIcon(evaluation.passed)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{evaluation.prompt_title}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{evaluation.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
-                    {evaluation.vendor_name || <span className="text-gray-400">-</span>}
+                  <td className="px-6 py-4 text-sm text-neutral-900">{evaluation.prompt_title}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-900">{evaluation.name}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-700">
+                    {evaluation.vendor_name || <span className="text-neutral-400">-</span>}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 capitalize">
-                    {evaluation.category || <span className="text-gray-400">-</span>}
+                  <td className="px-6 py-4 text-sm text-neutral-700 capitalize">
+                    {evaluation.category || <span className="text-neutral-400">-</span>}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700 tabular-nums">
+                  <td className="px-6 py-4 text-sm text-neutral-700 tabular-nums">
                     <span className={`font-medium ${getScoreColor(evaluation.avg_score)}`}>
                       {evaluation.avg_score !== null ? evaluation.avg_score.toFixed(2) : '-'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{evaluation.model}</td>
-                  <td className="px-6 py-4 text-sm text-gray-700">
+                  <td className="px-6 py-4 text-sm text-neutral-700">{evaluation.model}</td>
+                  <td className="px-6 py-4 text-sm text-neutral-700">
                     {formatRelativeTime(evaluation.created_at)}
                   </td>
                 </tr>
@@ -233,21 +233,21 @@ export const EvaluationTable: React.FC<EvaluationTableProps> = ({ refreshTrigger
 
       {/* Pagination */}
       {total > filters.limit! && (
-        <div className="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+        <div className="px-6 py-4 bg-neutral-50 border-t flex items-center justify-between">
           <button
             onClick={() => setFilters({ ...filters, offset: Math.max(0, (filters.offset || 0) - filters.limit!) })}
             disabled={!filters.offset}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-neutral-600">
             Page {Math.floor((filters.offset || 0) / filters.limit!) + 1} of {Math.ceil(total / filters.limit!)}
           </div>
           <button
             onClick={() => setFilters({ ...filters, offset: (filters.offset || 0) + filters.limit! })}
             disabled={(filters.offset || 0) + filters.limit! >= total}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

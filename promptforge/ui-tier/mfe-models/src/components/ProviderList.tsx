@@ -326,7 +326,7 @@ export const ProviderList: React.FC<ProviderListProps> = ({
                         </>
                       ) : (
                         <>
-                          <AlertCircle className="h-4 w-4 text-gray-600" />
+                          <AlertCircle className="h-4 w-4 text-neutral-600" />
                           <span className="font-medium text-neutral-800">Inactive</span>
                         </>
                       )}

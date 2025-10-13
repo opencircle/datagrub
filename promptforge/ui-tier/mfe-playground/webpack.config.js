@@ -14,6 +14,9 @@ module.exports = {
       'Access-Control-Allow-Origin': '*',
     },
   },
+  output: {
+    publicPath: 'auto',
+  },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     modules: [

@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://promptforge.ai/schemas/agent_context.schema.json",
+  "title": "Agent Context Schema",
+  "description": "Standard schema for PromptForge subagent context files",
+  "type": "object",
+  "required": ["agent_name", "initialized", "total_sessions", "last_updated"],
+  "properties": {
+    "agent_name": {
+      "type": "string",
+      "description": "Unique identifier for the agent",
+      "enum": [
+        "api_architect",
+        "apiqa",
+        "checker",
+        "db_architect",
+        "doc_tracker",
+        "ui_architect",
+        "uiqa",
+        "ux_specialist",
+        "validator"
+      ]
+    },
+    "initialized": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of first initialization"
+    },
+    "total_sessions": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of agent invocation sessions"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of last context update"
+    }
+  },
+  "additionalProperties": true,
+  "examples": [
+    {
+      "agent_name": "checker",
+      "initialized": "2025-10-06T00:00:00Z",
+      "total_sessions": 5,
+      "last_updated": "2025-10-11T11:00:00Z",
+      "total_checks": 5,
+      "checks_passed": 5,
+      "checks_failed": 0
+    }
+  ]
+}

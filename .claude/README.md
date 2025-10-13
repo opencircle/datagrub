@@ -1,1 +1,1 @@
-/Users/rohitiyer/datagrub/CLAUDE.md
+../promptforge/.claude/CLAUDE.md

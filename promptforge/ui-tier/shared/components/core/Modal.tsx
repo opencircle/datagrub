@@ -67,7 +67,7 @@ export const Modal: React.FC<ModalProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
-              className={`bg-white dark:bg-gray-800 rounded-xl shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col`}
+              className={`bg-white dark:bg-neutral-800 rounded-xl shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] flex flex-col`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}

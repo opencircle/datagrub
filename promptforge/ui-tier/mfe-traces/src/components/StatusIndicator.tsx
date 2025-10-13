@@ -10,7 +10,7 @@ const StatusIndicator: React.FC<StatusIndicatorProps> = ({ status }) => {
     error: { color: 'text-red-700', label: 'Error' },
     timeout: { color: 'text-amber-700', label: 'Timeout' },
     retry: { color: 'text-amber-700', label: 'Retry' },
-    pending: { color: 'text-gray-700', label: 'Pending' },
+    pending: { color: 'text-neutral-700', label: 'Pending' },
   };
 
   const { color, label } = config[status] || config.pending;

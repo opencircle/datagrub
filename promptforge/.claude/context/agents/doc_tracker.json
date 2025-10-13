@@ -1,0 +1,365 @@
+{
+  "agent_name": "doc_tracker",
+  "initialized": "2025-10-06T00:54:14Z",
+  "total_sessions": 3,
+  "last_update": "2025-10-11T10:30:00Z",
+  "phase2_specs_initialized": true,
+  "phase2_initialization_timestamp": "2025-10-11T10:30:00Z",
+  "phase2_specs_inventory": {
+    "total_specs": 12,
+    "specs": [
+      {
+        "filename": "Phase2_APIs.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_APIs.md",
+        "purpose": "Core API architecture and backend requirements",
+        "status": "active",
+        "key_topics": ["FastAPI", "PostgreSQL", "Redis", "OpenAPI", "Testing"]
+      },
+      {
+        "filename": "Phase2_API_SecurityRequirements.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_API_SecurityRequirements.md",
+        "purpose": "SOC 2 compliance and security architecture",
+        "status": "active",
+        "key_topics": ["JWT", "Multi-tenant", "Encryption", "RBAC", "Audit logging", "SOC 2"]
+      },
+      {
+        "filename": "Phase2_API_PerformanceRequirements.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_API_PerformanceRequirements.md",
+        "purpose": "Performance optimization and scalability guidelines",
+        "status": "active",
+        "key_topics": ["Async programming", "Database optimization", "Caching", "Rate limiting", "Load testing"]
+      },
+      {
+        "filename": "Phase2_Evaluation_Framework.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Evaluation_Framework.md",
+        "purpose": "Evaluation Abstraction Layer (EAL) with vendor and custom evaluations",
+        "status": "active",
+        "key_topics": ["DeepEval", "Ragas", "MLflow", "Custom evaluations", "LLM-as-Judge", "Adapter pattern", "Module-level registration"],
+        "critical_patterns": [
+          "adapter_evaluation_id: Database UUID ≠ Adapter internal ID",
+          "Module-level adapter registration (main.py:34-80)",
+          "Catalog filtering for available adapters only",
+          "Testing strategy: mock external only, test real adapters"
+        ]
+      },
+      {
+        "filename": "Phase2_Evaluation_Playground.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Evaluation_Playground.md",
+        "purpose": "Evaluation management dashboard and UI",
+        "status": "active",
+        "key_topics": ["Evaluation catalog", "Custom evaluations", "EvaluationSelector component", "Shared dropdown", "History tracking"],
+        "ui_patterns": [
+          "Shared EvaluationSelector component (ui-tier/shared/components/forms/EvaluationSelector.tsx)",
+          "Dropdown table view with filters (Category, Source, Tags)",
+          "Click-outside behavior resets filters",
+          "WCAG AAA accessibility compliance"
+        ]
+      },
+      {
+        "filename": "Phase2_Evaluation_Dashboard.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Evaluation_Dashboard.md",
+        "purpose": "Enhanced evaluation dashboard with prompt title display and filtering",
+        "status": "active",
+        "key_topics": ["Evaluation list", "Filters", "Detail modal", "Trace navigation", "Prompt title", "Vendor filter"],
+        "implementation_status": "Backend complete, frontend pending"
+      },
+      {
+        "filename": "Phase2_Insights_History.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Insights_History.md",
+        "purpose": "Deep Insights feature with DTA pipeline and model experimentation",
+        "status": "complete",
+        "key_topics": ["3-stage DTA", "Model selection", "Custom system prompts", "History tracking", "Evaluation integration"],
+        "completion": "100%"
+      },
+      {
+        "filename": "Phase2_Trace_Dashboard.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Trace_Dashboard.md",
+        "purpose": "Trace monitoring dashboard with parent-child relationships",
+        "status": "active",
+        "key_topics": ["Token tracking", "Evaluation integration", "EvaluationSelector", "Parent-child traces", "Source badges"],
+        "implementation_status": "Token tracking complete, Parent-child visualization in progress"
+      },
+      {
+        "filename": "Phase2_UI_Framework.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_UI_Framework.md",
+        "purpose": "UI/UX standards and best practices with Claude.ai design system",
+        "status": "active",
+        "key_topics": ["Client-side routing", "State management", "Design system", "Accessibility", "Shared components"],
+        "design_standards": [
+          "Claude.ai-inspired design (neutral-50 backgrounds, rounded-2xl cards)",
+          "Primary color: #FF385C",
+          "Neutral-* palette (warm gray, NOT gray-*)",
+          "8px spacing grid",
+          "h-11 (44px) buttons, h-12 (48px) inputs",
+          "WCAG AAA contrast ratios"
+        ]
+      },
+      {
+        "filename": "Phase2_Model_Dashboard.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Model_Dashboard.md",
+        "purpose": "Model provider configuration and management dashboard",
+        "status": "active",
+        "key_topics": ["API key management", "Provider catalog", "Encryption", "RBAC", "Backward compatibility"],
+        "backward_compatibility": "Maintains support for environment variables (OPENAI_API_KEY, etc.)"
+      },
+      {
+        "filename": "Phase2_Summarization_Insights_API_DTA.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Summarization_Insights_API_DTA.md",
+        "purpose": "Deep Insights API with Dynamic Temperature Adjustment pipeline",
+        "status": "active",
+        "key_topics": ["DTA pipeline", "3-stage processing", "Model provider integration", "Token tracking"]
+      },
+      {
+        "filename": "Phase2_Insight_Comparator.md",
+        "path": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Insight_Comparator.md",
+        "purpose": "Model comparison feature for cost-benefit analysis",
+        "status": "ready_for_implementation",
+        "key_topics": ["Blind comparison", "Judge model", "Per-stage evaluation", "Cost optimization"],
+        "implementation_priority": "High",
+        "estimated_effort": "10-15 days (2-3 sprints)"
+      }
+    ]
+  },
+  "validations": [
+    {
+      "timestamp": "2025-10-06T18:30:00Z",
+      "document": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Trace_Dashboard.md",
+      "action": "update",
+      "sections_updated": [
+        "Section 5: Data Model Requirements - Added token tracking architecture",
+        "Section 6: Evaluation Integration (NEW) - Complete evaluation workflow documentation",
+        "Section 7: Technical Requirements (renumbered)",
+        "Section 8: Test Coverage (NEW) - Comprehensive test documentation",
+        "Section 9: Security & Compliance (renumbered)",
+        "Section 10: Claude-Specific Agent Instructions (renumbered + enhanced)",
+        "Section 11: Deliverables (renumbered + expanded)",
+        "Section 12: Success Criteria (renumbered + enhanced)",
+        "Section 13: Implementation Status (NEW) - Completed and pending features"
+      ],
+      "changes_documented": [
+        "Token tracking: input_tokens, output_tokens, total_tokens separation",
+        "ModelExecutionResult class updates with token breakdown",
+        "TraceService.create_trace() parameter additions",
+        "OpenAI and Anthropic provider token extraction",
+        "Evaluation integration in PlaygroundExecutionRequest",
+        "EvaluationSelector UI component features and UX",
+        "Playground evaluation workflow and error handling",
+        "Test coverage including test_execute_prompt_with_evaluation",
+        "Docker-based test execution setup",
+        "File paths and line numbers for all implementations"
+      ],
+      "status": "completed",
+      "files_referenced": [
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/services/model_provider.py:28-35, 149-159, 205-219",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/services/trace_service.py:36-37, 99-100",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/endpoints/playground.py:43, 134-192",
+        "/Users/rohitiyer/datagrub/promptforge/ui-tier/mfe-playground/src/components/EvaluationSelector.tsx",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/tests/mfe_playground/test_playground_api.py:423-556",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/scripts/run_tests.sh"
+      ]
+    },
+    {
+      "timestamp": "2025-10-06T23:45:00Z",
+      "document": "/Users/rohitiyer/datagrub/PromptForge_Build_Specs/Phase2_Evaluation_Framework.md",
+      "action": "major_update",
+      "sections_updated": [
+        "Section 5: Architecture Patterns and Best Practices (NEW) - Complete architectural learnings",
+        "Section 5.1: Adapter ID Mapping (NEW) - adapter_evaluation_id architecture",
+        "Section 5.2: Module-Level Adapter Registration (NEW) - uvicorn worker pattern",
+        "Section 5.3: Catalog Filtering for Available Adapters (NEW) - runtime filtering",
+        "Section 5.4: Testing Best Practices (NEW) - mock external only",
+        "Section 5.5: Adapter Implementation Requirements (NEW) - passed field requirement",
+        "Section 5.6: Current System Status (NEW) - deployment status as of 2025-10-06",
+        "Section 3d: Enhanced Database Schema (UPDATED) - added adapter_evaluation_id field"
+      ],
+      "changes_documented": [
+        "CRITICAL: Database UUID vs Adapter ID separation (adapter_evaluation_id field)",
+        "CRITICAL: Module-level adapter registration pattern for uvicorn workers",
+        "CRITICAL: Catalog filtering to only show executable evaluations",
+        "CRITICAL: Testing strategy - mock only external dependencies, test real adapters",
+        "CRITICAL: All adapters must return 'passed' field in EvaluationResult",
+        "Database schema addition: adapter_evaluation_id VARCHAR(255) with index",
+        "Database schema addition: adapter_class VARCHAR(100) for performance",
+        "Migration file: f2d6e7f8g9h0_add_adapter_evaluation_id.py",
+        "Three-tier adapter lookup strategy (adapter_class → source → brute force)",
+        "Registry execution flow with performance optimization hints",
+        "Module-level registration in main.py:34-80 (before app creation)",
+        "Catalog filtering in evaluation_catalog.py:151-171",
+        "Playground execution with adapter_evaluation_id mapping (playground.py:164-169)",
+        "Test file reference: test_playground_api.py:423-556",
+        "Current system status: 6 adapters registered (1 active, 5 placeholder)",
+        "PromptForge evaluations: all 6 functional and tested",
+        "Known limitations: vendor adapters placeholder, custom/LLM-judge not implemented",
+        "File paths for all modified files with line numbers"
+      ],
+      "status": "completed",
+      "architectural_patterns_added": [
+        "Adapter ID Mapping: Database UUIDs ≠ Adapter internal IDs",
+        "Module-Level Registration: Import-time registration for multi-worker compatibility",
+        "Catalog Filtering: Runtime filtering for available adapters only",
+        "Testing Strategy: Mock external dependencies, test real adapter execution",
+        "Adapter Requirements: Mandatory 'passed' field in all results"
+      ],
+      "files_referenced": [
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/alembic/versions/f2d6e7f8g9h0_add_adapter_evaluation_id.py",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/evaluations/registry.py:188-239",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/evaluations/adapters/promptforge.py:315-324",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/main.py:34-80",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/endpoints/playground.py:164-169",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/api/v1/evaluation_catalog.py:151-171",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/tests/mfe_playground/test_playground_api.py:423-556",
+        "/Users/rohitiyer/datagrub/promptforge/api-tier/app/models/evaluation_catalog.py"
+      ],
+      "impact": "Prevents 'evaluation not found' errors, ensures adapter availability across uvicorn workers, creates robust evaluation system tolerant of missing vendor libraries"
+    },
+    {
+      "timestamp": "2025-10-11T10:30:00Z",
+      "document": "Phase2_All_Specs_Initialization",
+      "action": "initialize",
+      "sections_reviewed": [
+        "Phase2_APIs.md - Core backend architecture",
+        "Phase2_API_SecurityRequirements.md - SOC 2 compliance",
+        "Phase2_API_PerformanceRequirements.md - Performance optimization",
+        "Phase2_Evaluation_Framework.md - Evaluation abstraction layer",
+        "Phase2_Evaluation_Playground.md - Evaluation UI dashboard",
+        "Phase2_Evaluation_Dashboard.md - Enhanced evaluation filtering",
+        "Phase2_Insights_History.md - Deep Insights DTA pipeline",
+        "Phase2_Trace_Dashboard.md - Trace monitoring with parent-child",
+        "Phase2_UI_Framework.md - UI standards and design system",
+        "Phase2_Model_Dashboard.md - Model provider management",
+        "Phase2_Summarization_Insights_API_DTA.md - DTA API spec",
+        "Phase2_Insight_Comparator.md - Model comparison feature"
+      ],
+      "status": "initialized",
+      "summary": "All 12 Phase 2 specifications reviewed and initialized in Claude context",
+      "key_integrations": [
+        "EvaluationSelector shared component (Playground + Insights)",
+        "Token tracking architecture (Model Provider → Trace → Dashboard)",
+        "Parent-child trace relationships (Call Insights DTA pipeline)",
+        "Organization-scoped API key management (backward compatible)",
+        "Module-level evaluation adapter registration (uvicorn multi-worker)",
+        "Claude.ai-inspired design system (neutral-50 backgrounds, #FF385C primary)"
+      ]
+    }
+  ],
+  "documentation_sync": {
+    "last_sync": "2025-10-11T10:30:00Z",
+    "specs_in_sync": [
+      "Phase2_APIs.md",
+      "Phase2_API_SecurityRequirements.md",
+      "Phase2_API_PerformanceRequirements.md",
+      "Phase2_Evaluation_Framework.md",
+      "Phase2_Evaluation_Playground.md",
+      "Phase2_Evaluation_Dashboard.md",
+      "Phase2_Insights_History.md",
+      "Phase2_Trace_Dashboard.md",
+      "Phase2_UI_Framework.md",
+      "Phase2_Model_Dashboard.md",
+      "Phase2_Summarization_Insights_API_DTA.md",
+      "Phase2_Insight_Comparator.md"
+    ],
+    "pending_updates": []
+  },
+  "critical_learnings_documented": {
+    "adapter_id_mapping": {
+      "issue": "Database UUIDs cannot be used directly as adapter evaluation IDs",
+      "solution": "Add adapter_evaluation_id VARCHAR(255) field to evaluation_catalog",
+      "migration": "f2d6e7f8g9h0_add_adapter_evaluation_id.py",
+      "documented_in": "Phase2_Evaluation_Framework.md Section 5.1"
+    },
+    "module_level_registration": {
+      "issue": "Lifespan function runs per-request, uvicorn --reload creates separate workers",
+      "solution": "Move adapter registration to module-level (executes on import)",
+      "implementation": "main.py:34-80 _register_evaluation_adapters()",
+      "documented_in": "Phase2_Evaluation_Framework.md Section 5.2"
+    },
+    "catalog_filtering": {
+      "issue": "Catalog returned evaluations whose adapters weren't registered",
+      "solution": "Filter catalog to only show evaluations with registered adapters",
+      "implementation": "evaluation_catalog.py:151-171",
+      "documented_in": "Phase2_Evaluation_Framework.md Section 5.3"
+    },
+    "testing_strategy": {
+      "issue": "Previous tests mocked entire evaluation flow, hiding architectural bugs",
+      "solution": "Mock only external dependencies (APIs), test real adapter execution",
+      "implementation": "test_playground_api.py:423-556",
+      "documented_in": "Phase2_Evaluation_Framework.md Section 5.4"
+    },
+    "adapter_requirements": {
+      "issue": "Database requires 'passed' field but adapters didn't always return it",
+      "solution": "All adapters must return 'passed' field in EvaluationResult",
+      "implementation": "All adapter execute() methods",
+      "documented_in": "Phase2_Evaluation_Framework.md Section 5.5"
+    },
+    "shared_evaluation_selector": {
+      "issue": "Inconsistent UX for evaluation selection across Playground and Insights",
+      "solution": "Created shared EvaluationSelector component with unified dropdown interface",
+      "implementation": "ui-tier/shared/components/forms/EvaluationSelector.tsx",
+      "documented_in": "Phase2_Evaluation_Playground.md, Phase2_UI_Framework.md Shared Components"
+    },
+    "design_system_consistency": {
+      "issue": "Mixed color palettes (gray-* vs neutral-*) and inconsistent spacing",
+      "solution": "Claude.ai-inspired design system with neutral-50 backgrounds, 8px grid, WCAG AAA",
+      "implementation": "ui-tier/DESIGN_SYSTEM.md + Phase2_UI_Framework.md",
+      "documented_in": "Phase2_UI_Framework.md Design System section"
+    },
+    "backward_compatibility": {
+      "issue": "Moving to database-stored API keys would break existing environment variable secrets",
+      "solution": "Fallback hierarchy: project DB → org DB → environment variables",
+      "implementation": "get_api_key() method in model provider service",
+      "documented_in": "Phase2_Model_Dashboard.md Backward Compatibility section"
+    }
+  },
+  "recommendations": [
+    {
+      "area": "Vendor Adapters",
+      "priority": "medium",
+      "recommendation": "Implement real evaluation logic for DeepEval, Ragas, MLflow, Deepchecks, Phoenix adapters (currently placeholders)",
+      "effort": "20-30 hours per adapter",
+      "benefits": "Unlock 87 vendor evaluations for production use"
+    },
+    {
+      "area": "Custom Evaluations",
+      "priority": "high",
+      "recommendation": "Implement custom evaluator creation API and UI",
+      "effort": "15-20 hours",
+      "benefits": "Enable client-specific business rule evaluations, major differentiator"
+    },
+    {
+      "area": "LLM-as-Judge",
+      "priority": "high",
+      "recommendation": "Implement LLM judge evaluator creation and execution",
+      "effort": "12-15 hours",
+      "benefits": "Enable subjective quality assessments at scale"
+    },
+    {
+      "area": "Documentation",
+      "priority": "low",
+      "recommendation": "Add API usage examples for each PromptForge evaluation to Phase2_Evaluation_Framework.md",
+      "effort": "2-3 hours",
+      "benefits": "Easier onboarding for new developers"
+    },
+    {
+      "area": "Testing",
+      "priority": "medium",
+      "recommendation": "Add integration tests for vendor adapters when real implementations are added",
+      "effort": "5-8 hours",
+      "benefits": "Ensure vendor library integrations work correctly"
+    },
+    {
+      "area": "Insight Comparator",
+      "priority": "high",
+      "recommendation": "Implement model comparison feature for cost-benefit analysis (blind evaluation with judge model)",
+      "effort": "10-15 days (2-3 sprints)",
+      "benefits": "Enable data-driven model selection decisions, identify cost optimization opportunities"
+    },
+    {
+      "area": "Parent-Child Trace Visualization",
+      "priority": "high",
+      "recommendation": "Complete frontend implementation of expandable parent-child trace relationships",
+      "effort": "8-10 days (1.5-2 sprints)",
+      "benefits": "Better visualization of DTA pipeline traces, aggregated metrics, improved UX",
+      "status": "Backend complete, frontend in progress"
+    }
+  ]
+}

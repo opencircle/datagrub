@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Play,
   Zap,
@@ -14,12 +14,16 @@ import {
   Target,
   AlertCircle,
   Loader2,
+  ArrowLeft,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { mockSessions, PlaygroundSession, Model } from './mockData';
+import { mockSessions } from './mockData';
+import { PlaygroundSession, Model } from './types/playground';
 import { executePrompt, PlaygroundExecutionRequest, PlaygroundExecutionResponse } from './services/playgroundService';
 import { EvaluationSelector } from '../../shared/components/forms/EvaluationSelector';
+import { HistoryCard } from './components/HistoryCard';
+import { useSessionNavigation } from './hooks/useSessionNavigation';
 
 // Prompt interface (simplified from shared)
 interface Prompt {
@@ -93,6 +97,9 @@ async function fetchAvailableModels(): Promise<Model[]> {
 }
 
 export const PlaygroundEnhanced: React.FC = () => {
+  // Deep linking hook
+  const { sessionId, navigateToSession, navigateToHome, isViewingSession } = useSessionNavigation();
+
   // UI State
   const [title, setTitle] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -151,18 +158,27 @@ export const PlaygroundEnhanced: React.FC = () => {
         trace_id: data.trace_id,
       });
 
-      // Add to sessions history
+      // Add to sessions history - capture ALL form fields
       const newSession: PlaygroundSession = {
         id: data.trace_id,
         timestamp: data.timestamp,
+        title: title.trim(),
         prompt,
+        systemPrompt: systemPrompt.trim() || undefined,  // NEW: Capture system prompt
         response: data.response,
         model: selectedModel,
         parameters: {
           temperature,
           maxTokens,
           topP,
+          topK,  // NEW: Capture topK parameter
         },
+        metadata: {
+          intent: intent.trim() || undefined,  // NEW: Capture intent
+          tone: tone,  // NEW: Capture tone
+          promptId: selectedPromptId || undefined,  // NEW: Capture loaded prompt ID
+        },
+        evaluationIds: selectedEvaluationIds.length > 0 ? selectedEvaluationIds : undefined,  // NEW: Capture evaluation IDs
         metrics: {
           latency: data.metrics.latency_ms / 1000,
           tokens: data.metrics.tokens_used,
@@ -198,9 +214,98 @@ export const PlaygroundEnhanced: React.FC = () => {
     setExecutionMetrics(null);
   };
 
+  // Handle "Load into Editor" - Restores ALL form fields from a session
+  const handleLoadSession = (session: PlaygroundSession) => {
+    // Restore all form fields
+    setTitle(session.title || '');
+    setPrompt(session.prompt);
+    setSystemPrompt(session.systemPrompt || '');
+    setResponse(session.response);
+    setSelectedModel(session.model);
+    setTemperature(session.parameters.temperature);
+    setMaxTokens(session.parameters.maxTokens);
+    setTopP(session.parameters.topP);
+    setTopK(session.parameters.topK || 40);
+    setIntent(session.metadata?.intent || '');
+    setTone(session.metadata?.tone || 'professional');
+    setSelectedEvaluationIds(session.evaluationIds || []);
+
+    // Update metrics if available
+    if (session.metrics) {
+      setExecutionMetrics({
+        latency_ms: session.metrics.latency * 1000,
+        tokens_used: session.metrics.tokens,
+        cost: session.metrics.cost,
+        trace_id: session.id,
+      });
+    }
+
+    // Update URL to reflect loaded session
+    navigateToSession(session.id);
+
+    // Scroll to top to show loaded session
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Collapse history section
+    setShowHistory(false);
+  };
+
+  // Load session from URL parameter on mount/change
+  useEffect(() => {
+    if (sessionId) {
+      const session = sessions.find((s) => s.id === sessionId);
+      if (session) {
+        // Load session data into form fields
+        setTitle(session.title || '');
+        setPrompt(session.prompt);
+        setSystemPrompt(session.systemPrompt || '');
+        setResponse(session.response);
+        setSelectedModel(session.model);
+        setTemperature(session.parameters.temperature);
+        setMaxTokens(session.parameters.maxTokens);
+        setTopP(session.parameters.topP);
+        setTopK(session.parameters.topK || 40);
+        setIntent(session.metadata?.intent || '');
+        setTone(session.metadata?.tone || 'professional');
+        setSelectedEvaluationIds(session.evaluationIds || []);
+
+        // Update metrics if available
+        if (session.metrics) {
+          setExecutionMetrics({
+            latency_ms: session.metrics.latency * 1000,
+            tokens_used: session.metrics.tokens,
+            cost: session.metrics.cost,
+            trace_id: session.id,
+          });
+        }
+
+        // Show history view to display the session details
+        setShowHistory(true);
+
+        // Scroll to top to show loaded session
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        console.warn(`Session ${sessionId} not found in history`);
+        // Optionally navigate home if session not found
+        // navigateToHome();
+      }
+    } else {
+      // No sessionId - hide history view
+      setShowHistory(false);
+    }
+  }, [sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSubmit = () => {
     // Input validation
     const errors: string[] = [];
+
+    if (!title.trim()) {
+      errors.push('Title is required');
+    }
+
+    if (title.trim().length > 200) {
+      errors.push('Title is too long (max 200 characters)');
+    }
 
     if (!prompt.trim()) {
       errors.push('User prompt is required');
@@ -245,6 +350,7 @@ export const PlaygroundEnhanced: React.FC = () => {
     setExecutionMetrics(null);
 
     const request: PlaygroundExecutionRequest = {
+      title: title.trim(),
       prompt: prompt.trim(),
       system_prompt: systemPrompt.trim() || undefined,
       model: selectedModel.id,
@@ -255,7 +361,6 @@ export const PlaygroundEnhanced: React.FC = () => {
         top_k: topK,
       },
       metadata: {
-        title: title.trim() || undefined,
         intent: intent || undefined,
         tone: tone,
         prompt_id: selectedPromptId || undefined,
@@ -270,11 +375,27 @@ export const PlaygroundEnhanced: React.FC = () => {
     <div className="space-y-8 max-w-7xl">
       {/* Header - Design System: Increased spacing, clearer hierarchy */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-800">Playground</h1>
-          <p className="text-neutral-500 mt-2 text-base">
-            Test prompts and experiment with AI models
-          </p>
+        <div className="flex items-center gap-3">
+          {isViewingSession && (
+            <button
+              onClick={navigateToHome}
+              className="p-2 hover:bg-neutral-100 rounded-lg transition-colors border border-neutral-200 focus:outline-none focus:ring-4 focus:ring-[#FF385C]/20"
+              title="Back to Playground"
+              aria-label="Back to Playground home"
+            >
+              <ArrowLeft className="h-5 w-5 text-neutral-600" />
+            </button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-800">
+              {isViewingSession ? 'Session Details' : 'Playground'}
+            </h1>
+            <p className="text-neutral-500 mt-2 text-base">
+              {isViewingSession
+                ? `Viewing session ${sessionId?.slice(0, 8)}...`
+                : 'Test prompts and experiment with AI models'}
+            </p>
+          </div>
         </div>
         <button
           onClick={() => setShowHistory(!showHistory)}
@@ -327,10 +448,10 @@ export const PlaygroundEnhanced: React.FC = () => {
         {/* Middle Column - Prompt Configuration (2/3 width) */}
         <div className="col-span-2 space-y-4">
           <div className="bg-white border border-neutral-200 rounded-xl p-6 space-y-5">
-            {/* Title - Optional identifier for traces and evaluations */}
+            {/* Title - Required identifier for traces and evaluations */}
             <div>
               <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                Title (Optional)
+                Title <span className="text-[#FF385C]">*</span>
               </label>
               <input
                 type="text"
@@ -340,7 +461,7 @@ export const PlaygroundEnhanced: React.FC = () => {
                 className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-neutral-700 focus:outline-none focus:border-[#FF385C] focus:ring-4 focus:ring-[#FF385C]/20 transition-all duration-200 placeholder:text-neutral-400"
               />
               <p className="mt-1 text-xs text-neutral-500">
-                Give this execution a memorable name to identify it in traces and evaluations. Defaults to project name if not provided.
+                Give this execution a memorable name to identify it in traces, history, and evaluations.
               </p>
             </div>
 
@@ -416,7 +537,7 @@ export const PlaygroundEnhanced: React.FC = () => {
             {/* Run Button - Design System */}
             <button
               onClick={handleSubmit}
-              disabled={executeMutation.isPending || !prompt.trim()}
+              disabled={executeMutation.isPending || !title.trim() || !prompt.trim()}
               className="flex items-center justify-center gap-2 w-full h-12 bg-[#FF385C] text-white rounded-xl hover:bg-[#E31C5F] transition-all duration-200 disabled:bg-neutral-300 disabled:text-neutral-500 disabled:cursor-not-allowed font-semibold shadow-sm focus:outline-none focus:ring-4 focus:ring-[#FF385C]/20"
             >
               {executeMutation.isPending ? (
@@ -668,7 +789,7 @@ export const PlaygroundEnhanced: React.FC = () => {
         </div>
       </div>
 
-      {/* History - Design System */}
+      {/* History - Enhanced with HistoryCard Components */}
       <AnimatePresence>
         {showHistory && (
           <motion.div
@@ -679,31 +800,27 @@ export const PlaygroundEnhanced: React.FC = () => {
           >
             <div className="p-5 border-b border-neutral-200">
               <h3 className="font-semibold text-neutral-700">Session History</h3>
+              <p className="text-xs text-neutral-500 mt-1">
+                {sessions.length} session{sessions.length !== 1 ? 's' : ''} • Click to expand details
+              </p>
             </div>
-            <div className="divide-y divide-neutral-200">
-              {sessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="p-5 hover:bg-neutral-50 cursor-pointer transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-neutral-700 mb-1">
-                        {session.model.name}
-                      </p>
-                      <p className="text-sm text-neutral-600 line-clamp-2">{session.prompt}</p>
-                    </div>
-                    <span className="text-xs text-neutral-500 ml-4">
-                      {new Date(session.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-neutral-500 font-medium">
-                    <span>{session.metrics.latency.toFixed(2)}s</span>
-                    <span>{session.metrics.tokens} tokens</span>
-                    <span>${session.metrics.cost.toFixed(4)}</span>
-                  </div>
+            <div className="p-4 space-y-4">
+              {sessions.length === 0 ? (
+                <div className="py-12 text-center text-neutral-500">
+                  <History className="h-12 w-12 mx-auto mb-3 text-neutral-300" />
+                  <p className="text-sm">No sessions yet</p>
+                  <p className="text-xs mt-1">Run a prompt to create your first session</p>
                 </div>
-              ))}
+              ) : (
+                sessions.map((session) => (
+                  <HistoryCard
+                    key={session.id}
+                    session={session}
+                    onLoadIntoEditor={handleLoadSession}
+                    defaultExpanded={session.id === sessionId}
+                  />
+                ))
+              )}
             </div>
           </motion.div>
         )}

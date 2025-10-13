@@ -1,0 +1,60 @@
+{
+  "workflow_version": "1.0",
+  "last_updated": "2025-10-11T10:45:00Z",
+  "pending_approvals": [],
+  "approval_history": [],
+  "enforcement_rules": {
+    "mandatory_checker_approval": true,
+    "block_user_response_until_approved": true,
+    "allow_parallel_approvals": false,
+    "max_pending_approvals": 3
+  },
+  "workflow_description": {
+    "purpose": "Track architect agent approval checkpoints to enforce mandatory Checker Agent review",
+    "policy_reference": "CLAUDE_ORCHESTRATOR.md:73-90 - MANDATORY CHECKER APPROVAL POLICY",
+    "workflow_steps": [
+      "1. Architect agent completes implementation work",
+      "2. Add approval checkpoint: workflow-manager.sh add <task_uuid> <architect_agent>",
+      "3. Invoke Checker Agent for Post_Check validation",
+      "4. Checker returns status: APPROVED, PASS_WITH_WARNINGS, or BLOCKED",
+      "5. If BLOCKED: Address issues and re-submit to Checker",
+      "6. If APPROVED/PASS_WITH_WARNINGS: workflow-manager.sh approve <task_uuid> <status>",
+      "7. Present results to user with Checker badge"
+    ],
+    "status_definitions": {
+      "awaiting_checker_approval": "Checkpoint added, waiting for Checker Agent review",
+      "APPROVED": "All quality gates passed, no issues found",
+      "PASS_WITH_WARNINGS": "Quality gates passed with minor warnings (non-blocking)",
+      "BLOCKED": "Critical issues found, requires fixes before user presentation"
+    }
+  },
+  "usage_examples": [
+    {
+      "scenario": "UI Architect completes component implementation",
+      "commands": [
+        "./claude/scripts/workflow-manager.sh add task-abc-123 UI_Architect_Agent",
+        "Invoke Checker Agent to perform Post_Check validation of UI Architect's work",
+        "./claude/scripts/workflow-manager.sh approve task-abc-123 APPROVED"
+      ]
+    },
+    {
+      "scenario": "Check approval status before presenting results",
+      "commands": [
+        "./claude/scripts/workflow-manager.sh check task-abc-123",
+        "# Returns: approved | awaiting_checker_approval | APPROVED | PASS_WITH_WARNINGS | BLOCKED"
+      ]
+    },
+    {
+      "scenario": "View all pending approvals",
+      "commands": [
+        "./claude/scripts/workflow-manager.sh list"
+      ]
+    },
+    {
+      "scenario": "View approval history",
+      "commands": [
+        "./claude/scripts/workflow-manager.sh history 20"
+      ]
+    }
+  ]
+}

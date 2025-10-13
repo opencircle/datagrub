@@ -89,13 +89,13 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
         <div className="flex items-center gap-4 flex-1">
           {/* Prompt Title Search */}
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
             <input
               type="text"
               placeholder="Search prompt titles..."
               value={promptTitle}
               onChange={(e) => setPromptTitle(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
@@ -105,7 +105,7 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
             className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
               showFilters || hasActiveFilters
                 ? 'bg-primary text-white border-primary'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50'
             }`}
           >
             <Filter className="h-4 w-4" />
@@ -126,7 +126,7 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-1 px-3 py-2 text-sm text-neutral-600 hover:text-neutral-900"
             >
               <X className="h-4 w-4" />
               Clear
@@ -135,7 +135,7 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
         </div>
 
         {/* Results Count */}
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-neutral-600">
           {totalResults} {totalResults === 1 ? 'result' : 'results'}
         </div>
       </div>
@@ -145,13 +145,13 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
         <div className="px-6 pb-4 grid grid-cols-3 gap-4 border-t pt-4">
           {/* Vendor Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Vendor
             </label>
             <select
               value={filters.vendor || 'all'}
               onChange={(e) => handleVendorChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">All Vendors</option>
               <option value="Ragas">Ragas</option>
@@ -166,13 +166,13 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
 
           {/* Category Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Category
             </label>
             <select
               value={filters.category || 'all'}
               onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">All Categories</option>
               <option value="quality">Quality</option>
@@ -187,13 +187,13 @@ export const EvaluationFilters: React.FC<EvaluationFiltersProps> = ({
 
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
               Status
             </label>
             <select
               value={filters.status_filter || 'all'}
               onChange={(e) => handleStatusChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="all">All</option>
               <option value="pass">✓ Passed</option>

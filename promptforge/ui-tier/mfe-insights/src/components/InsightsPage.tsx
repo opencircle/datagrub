@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Brain, Loader2 } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Sparkles, Brain, Loader2, GitCompare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { InsightsFormState, InsightsResultState } from '../types/insights';
 import { DEFAULT_STAGE_PARAMS } from '../types/insights';
@@ -11,6 +12,9 @@ import ExperimentationSection from './sections/ExperimentationSection';
 import ResultsSection from './sections/ResultsSection';
 import TracesSection from './sections/TracesSection';
 import HistorySection from './sections/HistorySection';
+import { ComparisonPage } from './pages/ComparisonPage';
+import { ComparisonSelector } from './comparison/ComparisonSelector';
+import { InsightsProgressModal } from './InsightsProgressModal';
 
 /**
  * Deep Insights Page - Main container for call transcript analysis
@@ -21,8 +25,25 @@ import HistorySection from './sections/HistorySection';
  * - Summary, insights, and facts display
  * - Trace visualization for each stage
  * - Evaluation metrics display
+ * - Deep linking support for analysis/:id, compare/:idA/:idB, comparisons/:id
  */
 export const InsightsPage: React.FC = () => {
+  // URL params for deep linking
+  const { analysisId, analysisIdA, analysisIdB, comparisonId } = useParams<{
+    analysisId?: string;
+    analysisIdA?: string;
+    analysisIdB?: string;
+    comparisonId?: string;
+  }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // View mode: 'analysis' or 'comparison'
+  const [viewMode, setViewMode] = useState<'analysis' | 'comparison'>('analysis');
+  const [comparisonToView, setComparisonToView] = useState<string | undefined>(undefined);
+  const [preselectedAnalysisA, setPreselectedAnalysisA] = useState<string | undefined>(undefined);
+  const [preselectedAnalysisB, setPreselectedAnalysisB] = useState<string | undefined>(undefined);
+
   // Fetch available evaluations from API
   const { data: availableEvaluations, isLoading: isLoadingEvaluations } = useEvaluations({
     is_active: true,
@@ -62,6 +83,153 @@ export const InsightsPage: React.FC = () => {
     }
   }, [availableEvaluations, formState.selectedEvaluations.length]);
 
+  // Handler to load analysis by ID (defined before useEffect that calls it)
+  const handleLoadAnalysis = async (analysisId: string) => {
+    try {
+      // Set loading state
+      setResultState(prev => ({
+        ...prev,
+        isLoading: true,
+        error: null,
+      }));
+
+      // Fetch analysis from API
+      const analysis = await fetchAnalysisById(analysisId);
+
+      // Populate form with loaded data
+      setFormState(prev => ({
+        ...prev,
+        transcript: analysis.transcript_input,
+        transcriptTitle: analysis.transcript_title || '',
+        projectId: analysis.project_id || '',
+        systemPrompts: {
+          stage1: analysis.system_prompt_stage1 || '',
+          stage2: analysis.system_prompt_stage2 || '',
+          stage3: analysis.system_prompt_stage3 || '',
+        },
+        models: {
+          stage1: analysis.model_stage1 || 'gpt-4o-mini',
+          stage2: analysis.model_stage2 || 'gpt-4o-mini',
+          stage3: analysis.model_stage3 || 'gpt-4o-mini',
+        },
+      }));
+
+      // Extract model parameters from analysis_metadata or use defaults
+      const modelParams = analysis.analysis_metadata?.model_parameters || {};
+      const stage1Params = modelParams.stage1 || DEFAULT_STAGE_PARAMS.factExtraction;
+      const stage2Params = modelParams.stage2 || DEFAULT_STAGE_PARAMS.reasoning;
+      const stage3Params = modelParams.stage3 || DEFAULT_STAGE_PARAMS.summary;
+
+      // Build traces array from system prompts, models, and actual parameters
+      const traces = [
+        {
+          trace_id: `${analysis.id}-stage1`,
+          stage: 'Stage 1: Fact Extraction',
+          model: analysis.model_stage1 || 'gpt-4o-mini',
+          temperature: stage1Params.temperature ?? 0.25,
+          top_p: stage1Params.top_p ?? 0.95,
+          max_tokens: stage1Params.max_tokens ?? 1000,
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+          duration_ms: 0,
+          cost: 0,
+          system_prompt: analysis.system_prompt_stage1 || null,
+        },
+        {
+          trace_id: `${analysis.id}-stage2`,
+          stage: 'Stage 2: Reasoning & Insights',
+          model: analysis.model_stage2 || 'gpt-4o-mini',
+          temperature: stage2Params.temperature ?? 0.65,
+          top_p: stage2Params.top_p ?? 0.95,
+          max_tokens: stage2Params.max_tokens ?? 1500,
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+          duration_ms: 0,
+          cost: 0,
+          system_prompt: analysis.system_prompt_stage2 || null,
+        },
+        {
+          trace_id: `${analysis.id}-stage3`,
+          stage: 'Stage 3: Summary Synthesis',
+          model: analysis.model_stage3 || 'gpt-4o-mini',
+          temperature: stage3Params.temperature ?? 0.45,
+          top_p: stage3Params.top_p ?? 0.95,
+          max_tokens: stage3Params.max_tokens ?? 800,
+          input_tokens: 0,
+          output_tokens: 0,
+          total_tokens: 0,
+          duration_ms: 0,
+          cost: 0,
+          system_prompt: analysis.system_prompt_stage3 || null,
+        },
+      ];
+
+      // Populate results
+      setResultState({
+        analysisId: analysis.id,
+        summary: analysis.summary_output,
+        insights: analysis.insights_output,
+        facts: analysis.facts_output,
+        traces: traces,
+        evaluations: [], // Would need to fetch evaluations separately if needed
+        totalTokens: analysis.total_tokens,
+        totalCost: analysis.total_cost,
+        isLoading: false,
+        error: null,
+      });
+
+      // Scroll to results
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      setResultState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to load analysis',
+      }));
+    }
+  };
+
+  // Handle deep linking via URL params and route detection
+  useEffect(() => {
+    // Auto-load analysis if analysisId is in URL
+    if (analysisId) {
+      handleLoadAnalysis(analysisId);
+      setViewMode('analysis'); // Ensure we're in analysis mode
+      return;
+    }
+
+    // Switch to comparison view if comparison routes are used
+    if (comparisonId) {
+      setComparisonToView(comparisonId);
+      setViewMode('comparison');
+      return;
+    }
+
+    // Pre-select analyses for ad-hoc comparison
+    if (analysisIdA && analysisIdB) {
+      setPreselectedAnalysisA(analysisIdA);
+      setPreselectedAnalysisB(analysisIdB);
+      setViewMode('comparison');
+      return;
+    }
+
+    // Check if we're on the /compare route (comparison selector with no params)
+    if (location.pathname.includes('/compare')) {
+      setComparisonToView(undefined);
+      setPreselectedAnalysisA(undefined);
+      setPreselectedAnalysisB(undefined);
+      setViewMode('comparison');
+      return;
+    }
+
+    // Default to analysis mode for main page
+    if (location.pathname === '/insights' || location.pathname === '/insights/') {
+      setViewMode('analysis');
+    }
+  }, [analysisId, analysisIdA, analysisIdB, comparisonId, location.pathname]);
+
   // Result state
   const [resultState, setResultState] = useState<InsightsResultState>({
     analysisId: null,
@@ -82,6 +250,14 @@ export const InsightsPage: React.FC = () => {
   const handleAnalyze = () => {
     // Validation
     const errors: string[] = [];
+
+    if (!formState.transcriptTitle.trim()) {
+      errors.push('Title is required');
+    }
+
+    if (formState.transcriptTitle.trim().length > 500) {
+      errors.push('Title is too long (max 500 characters)');
+    }
 
     if (!formState.transcript.trim()) {
       errors.push('Transcript is required');
@@ -121,7 +297,7 @@ export const InsightsPage: React.FC = () => {
     analyzeTranscriptMutation.mutate(
       {
         transcript: formState.transcript.trim(),
-        transcript_title: formState.transcriptTitle.trim() || undefined,
+        transcript_title: formState.transcriptTitle.trim(),
         project_id: formState.projectId || undefined,
         enable_pii_redaction: formState.enablePiiRedaction,
         stage_params: formState.showAdvancedParams ? {
@@ -207,109 +383,38 @@ export const InsightsPage: React.FC = () => {
     });
   };
 
-  const handleLoadAnalysis = async (analysisId: string) => {
-    try {
-      // Set loading state
-      setResultState(prev => ({
-        ...prev,
-        isLoading: true,
-        error: null,
-      }));
-
-      // Fetch analysis from API
-      const analysis = await fetchAnalysisById(analysisId);
-
-      // Populate form with loaded data
-      setFormState(prev => ({
-        ...prev,
-        transcript: analysis.transcript_input,
-        transcriptTitle: analysis.transcript_title || '',
-        projectId: analysis.project_id || '',
-        systemPrompts: {
-          stage1: analysis.system_prompt_stage1 || '',
-          stage2: analysis.system_prompt_stage2 || '',
-          stage3: analysis.system_prompt_stage3 || '',
-        },
-        models: {
-          stage1: analysis.model_stage1 || 'gpt-4o-mini',
-          stage2: analysis.model_stage2 || 'gpt-4o-mini',
-          stage3: analysis.model_stage3 || 'gpt-4o-mini',
-        },
-      }));
-
-      // Build traces array from system prompts and models
-      const traces = [
-        {
-          trace_id: `${analysis.id}-stage1`,
-          stage: 'Stage 1: Fact Extraction',
-          model: analysis.model_stage1 || 'gpt-4o-mini',
-          temperature: 0.25, // Default stage 1 temperature
-          top_p: 0.95,
-          max_tokens: 1000,
-          input_tokens: 0,
-          output_tokens: 0,
-          total_tokens: 0,
-          duration_ms: 0,
-          cost: 0,
-          system_prompt: analysis.system_prompt_stage1 || null,
-        },
-        {
-          trace_id: `${analysis.id}-stage2`,
-          stage: 'Stage 2: Reasoning & Insights',
-          model: analysis.model_stage2 || 'gpt-4o-mini',
-          temperature: 0.65, // Default stage 2 temperature
-          top_p: 0.95,
-          max_tokens: 1500,
-          input_tokens: 0,
-          output_tokens: 0,
-          total_tokens: 0,
-          duration_ms: 0,
-          cost: 0,
-          system_prompt: analysis.system_prompt_stage2 || null,
-        },
-        {
-          trace_id: `${analysis.id}-stage3`,
-          stage: 'Stage 3: Summary Synthesis',
-          model: analysis.model_stage3 || 'gpt-4o-mini',
-          temperature: 0.45, // Default stage 3 temperature
-          top_p: 0.95,
-          max_tokens: 800,
-          input_tokens: 0,
-          output_tokens: 0,
-          total_tokens: 0,
-          duration_ms: 0,
-          cost: 0,
-          system_prompt: analysis.system_prompt_stage3 || null,
-        },
-      ];
-
-      // Populate results
-      setResultState({
-        analysisId: analysis.id,
-        summary: analysis.summary_output,
-        insights: analysis.insights_output,
-        facts: analysis.facts_output,
-        traces: traces,
-        evaluations: [], // Would need to fetch evaluations separately if needed
-        totalTokens: analysis.total_tokens,
-        totalCost: analysis.total_cost,
-        isLoading: false,
-        error: null,
-      });
-
-      // Scroll to results
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error) {
-      setResultState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to load analysis',
-      }));
-    }
+  const handleCompareAnalyses = (analysisAId: string, analysisBId: string) => {
+    // Navigate to comparison route (enables deep linking + bookmarking)
+    navigate(`/insights/compare/${analysisAId}/${analysisBId}`);
   };
+
+  const handleViewComparison = (comparisonId: string) => {
+    // Navigate to saved comparison route
+    navigate(`/insights/comparisons/${comparisonId}`);
+  };
+
+  // Render comparison view if in comparison mode
+  if (viewMode === 'comparison') {
+    return (
+      <ComparisonPage
+        comparisonId={comparisonToView}
+        preselectedAnalysisAId={preselectedAnalysisA}
+        preselectedAnalysisBId={preselectedAnalysisB}
+        onBack={() => navigate('/insights')}
+        onViewAnalysis={(id) => navigate(`/insights/analysis/${id}`)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* ARIA Live Region for Screen Readers */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {resultState.isLoading && "Analyzing transcript, please wait"}
+        {resultState.error && `Error: ${resultState.error}`}
+        {resultState.summary && "Analysis complete"}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -323,10 +428,22 @@ export const InsightsPage: React.FC = () => {
             Analyze call transcripts with 3-stage Dynamic Temperature Adjustment
           </p>
         </div>
+
+        {/* Comparison Button */}
+        <button
+          onClick={() => navigate('/insights/compare')}
+          className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#FF385C] text-[#FF385C] rounded-lg hover:bg-pink-50 transition-colors font-semibold"
+        >
+          <GitCompare className="h-4 w-4" />
+          Compare Analyses
+        </button>
       </div>
 
       {/* History Section */}
-      <HistorySection onSelectAnalysis={handleLoadAnalysis} />
+      <HistorySection
+        onSelectAnalysis={handleLoadAnalysis}
+        onCompareAnalyses={handleCompareAnalyses}
+      />
 
       <div className="grid grid-cols-3 gap-6">
         {/* Left Column - Input Form (2/3 width) */}
@@ -350,7 +467,7 @@ export const InsightsPage: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleAnalyze}
-              disabled={resultState.isLoading || !formState.transcript.trim()}
+              disabled={resultState.isLoading || !formState.transcriptTitle.trim() || !formState.transcript.trim()}
               className="flex items-center justify-center gap-2 h-12 bg-[#FF385C] text-white px-8 rounded-xl hover:bg-[#E31C5F] transition-all duration-200 disabled:bg-neutral-300 disabled:text-neutral-500 disabled:cursor-not-allowed font-semibold shadow-sm focus:outline-none focus:ring-4 focus:ring-[#FF385C]/20"
             >
               {resultState.isLoading ? (
@@ -487,6 +604,9 @@ export const InsightsPage: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Progress Modal */}
+      <InsightsProgressModal isVisible={resultState.isLoading} />
     </div>
   );
 };

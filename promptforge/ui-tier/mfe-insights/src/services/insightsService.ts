@@ -8,6 +8,9 @@ import type {
   CallInsightsResponse,
   CallInsightsAnalysis,
   CallInsightsHistoryItem,
+  CreateComparisonRequest,
+  ComparisonResponse,
+  ComparisonListResponse,
 } from '../types/insights';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
@@ -120,4 +123,160 @@ export async function fetchAnalysisById(
   }
 
   return response.json();
+}
+
+/**
+ * Update analysis title
+ *
+ * @param analysisId - Analysis UUID
+ * @param newTitle - New title for the analysis
+ * @returns Updated analysis
+ */
+export async function updateAnalysisTitle(
+  analysisId: string,
+  newTitle: string
+): Promise<CallInsightsAnalysis> {
+  const token = getAccessToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/call-insights/${analysisId}/title`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ transcript_title: newTitle }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(error.detail || 'Failed to update analysis title');
+  }
+
+  return response.json();
+}
+
+// ============================================================================
+// Insight Comparison Service Functions
+// ============================================================================
+
+/**
+ * Create a new comparison between two analyses
+ *
+ * This will:
+ * 1. Validate both analyses exist and have same transcript
+ * 2. Execute judge model for blind evaluation across 3 stages
+ * 3. Calculate overall winner with cost-benefit analysis
+ * 4. Store comparison results with traces
+ *
+ * @param request - Comparison creation request
+ * @returns Complete comparison results with per-stage scores
+ */
+export async function createComparison(
+  request: CreateComparisonRequest
+): Promise<ComparisonResponse> {
+  const token = getAccessToken();
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/insights/comparisons`, {
+    method: 'POST',
+    headers: {
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(error.detail || 'Failed to create comparison');
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch comparison history with pagination
+ *
+ * @param skip - Number of records to skip
+ * @param limit - Maximum number of records to return
+ * @returns Paginated list of comparisons
+ */
+export async function fetchComparisonHistory(
+  skip: number = 0,
+  limit: number = 20
+): Promise<ComparisonListResponse> {
+  const token = getAccessToken();
+  const params = new URLSearchParams();
+
+  params.append('skip', skip.toString());
+  params.append('limit', limit.toString());
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/insights/comparisons?${params.toString()}`,
+    {
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch comparison history: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch a specific comparison by ID
+ *
+ * @param comparisonId - Comparison UUID
+ * @returns Complete comparison details
+ */
+export async function fetchComparisonById(
+  comparisonId: string
+): Promise<ComparisonResponse> {
+  const token = getAccessToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/insights/comparisons/${comparisonId}`,
+    {
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch comparison: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a comparison by ID
+ *
+ * @param comparisonId - Comparison UUID
+ */
+export async function deleteComparison(comparisonId: string): Promise<void> {
+  const token = getAccessToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/v1/insights/comparisons/${comparisonId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete comparison: ${response.statusText}`);
+  }
 }

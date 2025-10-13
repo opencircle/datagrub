@@ -33,14 +33,14 @@ export const VariableEditor: React.FC<VariableEditorProps> = ({ variables, onCha
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Variables</h3>
+        <h3 className="text-lg font-semibold text-neutral-900">Variables</h3>
         <Button variant="secondary" size="sm" onClick={addVariable}>
           Add Variable
         </Button>
       </div>
 
       {variables.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-neutral-500">
           No variables defined. Click "Add Variable" to create one.
         </div>
       ) : (
@@ -48,7 +48,7 @@ export const VariableEditor: React.FC<VariableEditorProps> = ({ variables, onCha
           {variables.map((variable, index) => (
             <div
               key={index}
-              className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50"
+              className="border border-neutral-200 rounded-lg p-4 space-y-3 bg-neutral-50"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Input
@@ -83,9 +83,9 @@ export const VariableEditor: React.FC<VariableEditorProps> = ({ variables, onCha
                     type="checkbox"
                     checked={variable.required}
                     onChange={(e) => updateVariable(index, 'required', e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700">Required</span>
+                  <span className="text-sm text-neutral-700">Required</span>
                 </label>
 
                 <Button

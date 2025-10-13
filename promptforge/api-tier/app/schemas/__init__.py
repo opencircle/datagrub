@@ -23,6 +23,15 @@ from app.schemas.evaluation_catalog import (
 from app.schemas.trace import TraceCreate, TraceResponse, SpanCreate, SpanResponse
 from app.schemas.policy import PolicyCreate, PolicyUpdate, PolicyResponse, PolicyViolationResponse
 from app.schemas.model import AIModelCreate, AIModelUpdate, AIModelResponse, ModelProviderCreate, ModelProviderResponse
+from app.schemas.insight_comparison import (
+    CreateComparisonRequest,
+    ComparisonResponse,
+    ComparisonListItem,
+    ComparisonListResponse,
+    StageComparisonResult,
+    AnalysisSummary,
+    ComparisonError,
+)
 
 __all__ = [
     "UserCreate",
@@ -70,4 +79,11 @@ __all__ = [
     "AIModelResponse",
     "ModelProviderCreate",
     "ModelProviderResponse",
+    "CreateComparisonRequest",
+    "ComparisonResponse",
+    "ComparisonListItem",
+    "ComparisonListResponse",
+    "StageComparisonResult",
+    "AnalysisSummary",
+    "ComparisonError",
 ]

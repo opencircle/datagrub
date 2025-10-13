@@ -29,6 +29,7 @@ class Organization(BaseModel):
     projects = relationship("Project", back_populates="organization")
     model_provider_configs = relationship("ModelProviderConfig", back_populates="organization")
     call_insights_analyses = relationship("CallInsightsAnalysis", back_populates="organization")
+    insight_comparisons = relationship("InsightComparison", back_populates="organization")
 
 
 class User(BaseModel):
@@ -50,3 +51,4 @@ class User(BaseModel):
     created_projects = relationship("Project", back_populates="created_by_user")
     created_prompts = relationship("Prompt", back_populates="created_by_user")
     call_insights_analyses = relationship("CallInsightsAnalysis", back_populates="user")
+    insight_comparisons = relationship("InsightComparison", back_populates="user")

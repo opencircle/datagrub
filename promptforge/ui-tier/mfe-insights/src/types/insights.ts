@@ -95,6 +95,16 @@ export interface CallInsightsResponse {
   created_at: string;
 }
 
+export interface AnalysisMetadata {
+  stage_count?: number;
+  evaluation_count?: number;
+  model_parameters?: {
+    stage1?: StageParameters;
+    stage2?: StageParameters;
+    stage3?: StageParameters;
+  };
+}
+
 export interface CallInsightsAnalysis {
   id: string;
   transcript_title?: string;
@@ -112,6 +122,7 @@ export interface CallInsightsAnalysis {
   model_stage1?: string;
   model_stage2?: string;
   model_stage3?: string;
+  analysis_metadata?: AnalysisMetadata;
   created_at: string;
 }
 
@@ -190,3 +201,111 @@ export const AVAILABLE_EVALUATIONS = [
   { id: 'factual-accuracy', name: 'Factual Accuracy', description: 'Verification against source' },
   { id: 'readability', name: 'Readability', description: 'Ease of understanding' },
 ] as const;
+
+// ============================================================================
+// Insight Comparison Types
+// ============================================================================
+
+export interface StageScores {
+  groundedness?: number;
+  faithfulness?: number;
+  completeness?: number;
+  clarity?: number;
+  accuracy?: number;
+}
+
+export interface StageComparisonResult {
+  stage: string;
+  winner: 'A' | 'B' | 'tie';
+  scores: {
+    A: StageScores;
+    B: StageScores;
+  };
+  reasoning: string;
+}
+
+export interface AnalysisSummary {
+  id: string;
+  transcript_title?: string;
+  model_stage1?: string;
+  model_stage2?: string;
+  model_stage3?: string;
+  total_tokens: number;
+  total_cost: number;
+  created_at: string;
+}
+
+export interface JudgeTraceMetadata {
+  trace_id?: string;
+  model: string;
+  total_tokens: number;
+  cost: number;
+  duration_ms: number;
+}
+
+export interface ComparisonResponse {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  analysis_a: AnalysisSummary;
+  analysis_b: AnalysisSummary;
+  judge_model: string;
+  evaluation_criteria: string[];
+  overall_winner: 'A' | 'B' | 'tie';
+  overall_reasoning: string;
+  stage_results: StageComparisonResult[];
+  judge_trace: JudgeTraceMetadata;
+  created_at: string;
+}
+
+export interface ModelParameters {
+  stage1?: { temperature?: string; top_p?: string; max_tokens?: string };
+  stage2?: { temperature?: string; top_p?: string; max_tokens?: string };
+  stage3?: { temperature?: string; top_p?: string; max_tokens?: string };
+}
+
+export interface ComparisonListItem {
+  id: string;
+  analysis_a_title?: string;
+  analysis_b_title?: string;
+  model_a_summary: string;
+  model_b_summary: string;
+  // Model details for A
+  model_a_stage1?: string;
+  model_a_stage2?: string;
+  model_a_stage3?: string;
+  params_a?: ModelParameters;
+  // Model details for B
+  model_b_stage1?: string;
+  model_b_stage2?: string;
+  model_b_stage3?: string;
+  params_b?: ModelParameters;
+  // Cost and tokens
+  cost_a: number;
+  cost_b: number;
+  tokens_a: number;
+  tokens_b: number;
+  // Comparison results
+  judge_model: string;
+  overall_winner: 'A' | 'B' | 'tie';
+  cost_difference: string;
+  quality_improvement: string;
+  created_at: string;
+}
+
+export interface ComparisonListResponse {
+  comparisons: ComparisonListItem[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total_count: number;
+    total_pages: number;
+  };
+}
+
+export interface CreateComparisonRequest {
+  analysis_a_id: string;
+  analysis_b_id: string;
+  judge_model?: string;
+  evaluation_criteria?: string[];
+}

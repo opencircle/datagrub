@@ -118,6 +118,81 @@ PROVIDER_METADATA = [
                     "gpt-4-turbo": 128000,
                     "gpt-4": 8192,
                     "gpt-3.5-turbo": 16384
+                },
+                "parameter_compatibility": {
+                    "gpt-5": {
+                        "max_tokens_param": "max_completion_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2024-02-01",
+                        "supported_params": ["temperature", "top_p", "max_completion_tokens"],
+                        "default_overrides": {},
+                        "notes": "Full parameter support"
+                    },
+                    "gpt-5-mini": {
+                        "max_tokens_param": "max_completion_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2024-02-01",
+                        "supported_params": ["temperature", "top_p", "max_completion_tokens"],
+                        "default_overrides": {},
+                        "notes": "Full parameter support"
+                    },
+                    "gpt-5-nano": {
+                        "max_tokens_param": "max_completion_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2024-02-01",
+                        "supported_params": ["max_completion_tokens"],
+                        "default_overrides": {"temperature": 1.0},
+                        "notes": "Always uses temperature=1.0, does not support top_p"
+                    },
+                    "gpt-4.1": {
+                        "max_tokens_param": "max_completion_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2024-02-01",
+                        "supported_params": ["temperature", "top_p", "max_completion_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-4.1-mini": {
+                        "max_tokens_param": "max_completion_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2024-02-01",
+                        "supported_params": ["temperature", "top_p", "max_completion_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-4o": {
+                        "max_tokens_param": "max_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2023-12-01",
+                        "supported_params": ["temperature", "top_p", "max_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-4o-mini": {
+                        "max_tokens_param": "max_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2023-12-01",
+                        "supported_params": ["temperature", "top_p", "max_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-4-turbo": {
+                        "max_tokens_param": "max_tokens",
+                        "supports_response_format": True,
+                        "api_version": "2023-12-01",
+                        "supported_params": ["temperature", "top_p", "max_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-4": {
+                        "max_tokens_param": "max_tokens",
+                        "supports_response_format": False,
+                        "api_version": "2023-12-01",
+                        "supported_params": ["temperature", "top_p", "max_tokens"],
+                        "default_overrides": {}
+                    },
+                    "gpt-3.5-turbo": {
+                        "max_tokens_param": "max_tokens",
+                        "supports_response_format": False,
+                        "api_version": "2023-12-01",
+                        "supported_params": ["temperature", "top_p", "max_tokens"],
+                        "default_overrides": {}
+                    }
                 }
             },
             {

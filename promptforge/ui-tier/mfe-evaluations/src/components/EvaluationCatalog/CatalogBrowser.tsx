@@ -100,7 +100,7 @@ export const CatalogBrowser: React.FC<CatalogBrowserProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600">Loading evaluation catalog...</div>
+        <div className="text-neutral-600">Loading evaluation catalog...</div>
       </div>
     );
   }

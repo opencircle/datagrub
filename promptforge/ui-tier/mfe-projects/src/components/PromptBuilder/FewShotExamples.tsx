@@ -33,8 +33,8 @@ export const FewShotExamples: React.FC<FewShotExamplesProps> = ({ examples, onCh
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Few-Shot Examples</h3>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="text-lg font-semibold text-neutral-900">Few-Shot Examples</h3>
+          <p className="text-sm text-neutral-600 mt-1">
             Provide example inputs and outputs to guide the model's behavior
           </p>
         </div>
@@ -44,7 +44,7 @@ export const FewShotExamples: React.FC<FewShotExamplesProps> = ({ examples, onCh
       </div>
 
       {examples.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-neutral-500">
           No examples defined. Click "Add Example" to create one.
         </div>
       ) : (
@@ -52,10 +52,10 @@ export const FewShotExamples: React.FC<FewShotExamplesProps> = ({ examples, onCh
           {examples.map((example, index) => (
             <div
               key={example.id}
-              className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50"
+              className="border border-neutral-200 rounded-lg p-4 space-y-3 bg-neutral-50"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-neutral-700">
                   Example {index + 1}
                 </span>
                 <Button
@@ -90,7 +90,7 @@ export const FewShotExamples: React.FC<FewShotExamplesProps> = ({ examples, onCh
       )}
 
       {examples.length > 0 && (
-        <div className="text-xs text-gray-500 mt-2">
+        <div className="text-xs text-neutral-500 mt-2">
           {examples.length} example{examples.length !== 1 ? 's' : ''} defined
         </div>
       )}

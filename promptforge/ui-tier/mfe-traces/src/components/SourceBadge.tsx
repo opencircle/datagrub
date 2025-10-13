@@ -28,9 +28,9 @@ const SourceBadge: React.FC<SourceBadgeProps> = ({ source, className = '' }) => 
       default:
         return {
           icon: HelpCircle,
-          bgColor: 'bg-gray-100',
-          textColor: 'text-gray-800',
-          borderColor: 'border-gray-200',
+          bgColor: 'bg-neutral-100',
+          textColor: 'text-neutral-800',
+          borderColor: 'border-neutral-200',
           label: 'Other',
         };
     }

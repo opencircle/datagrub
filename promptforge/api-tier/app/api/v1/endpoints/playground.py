@@ -35,7 +35,7 @@ class PlaygroundMetadata(BaseModel):
 
 class PlaygroundExecutionRequest(BaseModel):
     """Request to execute a prompt"""
-    title: Optional[str] = Field(None, description="Title for this execution (defaults to project name)")
+    title: str = Field(..., min_length=1, max_length=200, description="Title for this execution (required)")
     prompt: str = Field(..., min_length=1, description="User prompt to execute")
     system_prompt: Optional[str] = Field(None, description="System prompt (optional)")
     model: str = Field(..., description="Model identifier (e.g., 'gpt-4', 'claude-3-opus')")
@@ -140,19 +140,27 @@ async def execute_prompt(
             from app.evaluations.base import EvaluationRequest
             from sqlalchemy import select
 
-            for evaluation_id in request.evaluation_ids:
+            print(f"[INFO] Processing {len(request.evaluation_ids)} evaluations: {request.evaluation_ids}")
+
+            for idx, evaluation_id in enumerate(request.evaluation_ids, 1):
                 try:
+                    print(f"[INFO] Processing evaluation {idx}/{len(request.evaluation_ids)}: {evaluation_id}")
+
                     # Get evaluation from catalog
                     eval_query = select(EvaluationCatalog).where(EvaluationCatalog.id == evaluation_id)
                     eval_result = await db.execute(eval_query)
                     evaluation = eval_result.scalar_one_or_none()
 
                     if not evaluation:
+                        print(f"[WARN] Evaluation {evaluation_id} not found in catalog")
                         continue
 
                     # Check access
                     if not evaluation.is_public and evaluation.organization_id != current_user.organization_id:
+                        print(f"[WARN] Access denied to evaluation {evaluation_id}")
                         continue
+
+                    print(f"[INFO] Found evaluation: {evaluation.name} ({evaluation.adapter_class}:{evaluation.adapter_evaluation_id})")
 
                     # Build evaluation request with organization context
                     eval_request = EvaluationRequest(
@@ -169,12 +177,14 @@ async def execute_prompt(
                     )
 
                     # Execute evaluation via registry
+                    print(f"[INFO] Executing evaluation via registry...")
                     eval_result_data = await registry.execute_evaluation(
                         evaluation.adapter_evaluation_id,
                         eval_request,
                         adapter_class=evaluation.adapter_class,
                         source=evaluation.source
                     )
+                    print(f"[INFO] Evaluation result: score={eval_result_data.score}, passed={eval_result_data.passed}")
 
                     # Save result to database with all metrics
                     trace_eval = TraceEvaluation(
@@ -205,10 +215,18 @@ async def execute_prompt(
 
                     db.add(trace_eval)
                     await db.commit()
+                    await db.refresh(trace_eval)  # Refresh to ensure session consistency
+                    print(f"[INFO] ✅ Successfully saved evaluation {idx}/{len(request.evaluation_ids)}")
 
                 except Exception as e:
+                    # Rollback on error to ensure next iteration has clean session
+                    await db.rollback()
                     # Log error but don't fail the entire request
-                    print(f"[WARN] Failed to execute evaluation {evaluation_id}: {e}")
+                    print(f"[ERROR] ❌ Failed to execute evaluation {idx}/{len(request.evaluation_ids)} ({evaluation_id}): {e}")
+                    import traceback
+                    traceback.print_exc()  # Print full traceback for debugging
+
+            print(f"[INFO] Completed processing all {len(request.evaluation_ids)} evaluations")
 
         return PlaygroundExecutionResponse(
             response=execution_result.response,

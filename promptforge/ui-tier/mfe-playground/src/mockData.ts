@@ -1,29 +1,4 @@
-export interface Model {
-  id: string;
-  name: string;
-  provider: string;
-  input_cost?: number;
-  output_cost?: number;
-  costMultiplier?: number;
-}
-
-export interface PlaygroundSession {
-  id: string;
-  timestamp: string;
-  prompt: string;
-  response: string;
-  model: Model;
-  parameters: {
-    temperature: number;
-    maxTokens: number;
-    topP: number;
-  };
-  metrics: {
-    latency: number;
-    tokens: number;
-    cost: number;
-  };
-}
+import { Model, PlaygroundSession } from './types/playground';
 
 export const availableModels: Model[] = [
   // OpenAI Models (2025 - Latest)

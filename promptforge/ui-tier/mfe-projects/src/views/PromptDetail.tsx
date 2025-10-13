@@ -97,7 +97,7 @@ export const PromptDetail: React.FC = () => {
   if (promptLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-600">Loading prompt...</div>
+        <div className="text-neutral-600">Loading prompt...</div>
       </div>
     );
   }
@@ -150,7 +150,7 @@ export const PromptDetail: React.FC = () => {
       <div>
         <button
           onClick={() => navigate(`/projects/${prompt.project_id}`)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          className="flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Project
@@ -164,7 +164,7 @@ export const PromptDetail: React.FC = () => {
                 {prompt.status}
               </Badge>
             </div>
-            <p className="text-gray-600">{prompt.description || 'No description'}</p>
+            <p className="text-neutral-600">{prompt.description || 'No description'}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export const PromptDetail: React.FC = () => {
         </div>
 
         {/* Metadata */}
-        <div className="mt-6 flex items-center gap-6 text-sm text-gray-600">
+        <div className="mt-6 flex items-center gap-6 text-sm text-neutral-600">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
             <span>Created by {prompt.created_by}</span>
@@ -208,11 +208,11 @@ export const PromptDetail: React.FC = () => {
 
         {/* Status Selector */}
         <div className="mt-4 flex items-center gap-2">
-          <span className="text-sm text-gray-600">Status:</span>
+          <span className="text-sm text-neutral-600">Status:</span>
           <select
             value={prompt.status}
             onChange={(e) => handleStatusChange(e.target.value as any)}
-            className="text-sm border border-gray-300 rounded px-2 py-1"
+            className="text-sm border border-neutral-300 rounded px-2 py-1"
           >
             <option value="draft">Draft</option>
             <option value="active">Active</option>
@@ -223,21 +223,21 @@ export const PromptDetail: React.FC = () => {
         {/* Invocation Metrics */}
         {invocationMetrics && invocationMetrics.totalInvocations > 0 && (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Total Invocations</div>
-              <div className="text-2xl font-semibold text-gray-900">
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <div className="text-sm text-neutral-600 mb-1">Total Invocations</div>
+              <div className="text-2xl font-semibold text-neutral-900">
                 {invocationMetrics.totalInvocations.toLocaleString()}
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Avg Latency</div>
-              <div className="text-2xl font-semibold text-gray-900">
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <div className="text-sm text-neutral-600 mb-1">Avg Latency</div>
+              <div className="text-2xl font-semibold text-neutral-900">
                 {invocationMetrics.avgLatency.toFixed(0)}ms
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-sm text-gray-600 mb-1">Avg Cost</div>
-              <div className="text-2xl font-semibold text-gray-900">
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <div className="text-sm text-neutral-600 mb-1">Avg Cost</div>
+              <div className="text-2xl font-semibold text-neutral-900">
                 ${invocationMetrics.avgCost.toFixed(4)}
               </div>
             </div>
@@ -276,34 +276,34 @@ export const PromptDetail: React.FC = () => {
         <div className="space-y-6">
           {/* System Prompt */}
           {currentVersion.system_message && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-3">System Prompt</h3>
-              <pre className="bg-gray-50 p-4 rounded text-sm whitespace-pre-wrap font-mono">
+              <pre className="bg-neutral-50 p-4 rounded text-sm whitespace-pre-wrap font-mono">
                 {currentVersion.system_message}
               </pre>
             </div>
           )}
 
           {/* User Prompt Template */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="bg-white border border-neutral-200 rounded-lg p-6">
             <h3 className="font-semibold text-lg mb-3">User Prompt Template</h3>
-            <pre className="bg-gray-50 p-4 rounded text-sm whitespace-pre-wrap font-mono">
+            <pre className="bg-neutral-50 p-4 rounded text-sm whitespace-pre-wrap font-mono">
               {currentVersion.template}
             </pre>
           </div>
 
           {/* Variables */}
           {currentVersion.variables && Object.keys(currentVersion.variables).length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-3">Variables</h3>
               <div className="space-y-3">
                 {Object.entries(currentVersion.variables).map(([name, config]: [string, any]) => (
-                  <div key={name} className="bg-gray-50 p-4 rounded">
+                  <div key={name} className="bg-neutral-50 p-4 rounded">
                     <div className="flex items-start justify-between">
                       <div>
                         <code className="text-sm font-mono text-blue-600">{name}</code>
                         {config.description && (
-                          <p className="text-sm text-gray-600 mt-1">{config.description}</p>
+                          <p className="text-sm text-neutral-600 mt-1">{config.description}</p>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -312,7 +312,7 @@ export const PromptDetail: React.FC = () => {
                       </div>
                     </div>
                     {config.defaultValue && (
-                      <div className="mt-2 text-sm text-gray-600">
+                      <div className="mt-2 text-sm text-neutral-600">
                         Default: <code className="bg-white px-2 py-1 rounded">{config.defaultValue}</code>
                       </div>
                     )}
@@ -324,7 +324,7 @@ export const PromptDetail: React.FC = () => {
 
           {/* Tags */}
           {currentVersion.tags && currentVersion.tags.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-3">Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {currentVersion.tags.map((tag) => (
@@ -339,9 +339,9 @@ export const PromptDetail: React.FC = () => {
 
           {/* Model Config */}
           {currentVersion.model_config && Object.keys(currentVersion.model_config).length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-neutral-200 rounded-lg p-6">
               <h3 className="font-semibold text-lg mb-3">Model Configuration</h3>
-              <pre className="bg-gray-50 p-4 rounded text-sm">
+              <pre className="bg-neutral-50 p-4 rounded text-sm">
                 {JSON.stringify(currentVersion.model_config, null, 2)}
               </pre>
             </div>
@@ -352,19 +352,19 @@ export const PromptDetail: React.FC = () => {
       {selectedTab === 'versions' && (
         <div className="space-y-4">
           {versionsLoading ? (
-            <div className="text-center py-8 text-gray-600">Loading versions...</div>
+            <div className="text-center py-8 text-neutral-600">Loading versions...</div>
           ) : versions.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">No versions found</div>
+            <div className="text-center py-8 text-neutral-600">No versions found</div>
           ) : (
             versions.map((version) => (
               <div
                 key={version.id}
-                className="bg-white border border-gray-200 rounded-lg p-6"
+                className="bg-white border border-neutral-200 rounded-lg p-6"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="font-semibold text-lg">Version {version.version_number}</h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-neutral-600">
                       Created {new Date(version.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -384,22 +384,22 @@ export const PromptDetail: React.FC = () => {
                 <div className="space-y-3">
                   {version.system_message && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">System Message</h4>
-                      <pre className="bg-gray-50 p-3 rounded text-xs whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+                      <h4 className="text-sm font-medium text-neutral-700 mb-1">System Message</h4>
+                      <pre className="bg-neutral-50 p-3 rounded text-xs whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
                         {version.system_message}
                       </pre>
                     </div>
                   )}
                   <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-1">Template</h4>
-                    <pre className="bg-gray-50 p-3 rounded text-xs whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
+                    <h4 className="text-sm font-medium text-neutral-700 mb-1">Template</h4>
+                    <pre className="bg-neutral-50 p-3 rounded text-xs whitespace-pre-wrap font-mono max-h-40 overflow-y-auto">
                       {version.template}
                     </pre>
                   </div>
                 </div>
 
                 {version.usage_count > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+                  <div className="mt-4 pt-4 border-t border-neutral-200 text-sm text-neutral-600">
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <span className="font-medium">Usage:</span> {version.usage_count}

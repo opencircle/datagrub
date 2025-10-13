@@ -17,6 +17,7 @@ from app.models.policy import Policy, PolicyViolation, PolicySeverity, PolicyAct
 from app.models.model import AIModel, ModelProvider, ModelProviderType
 from app.models.model_provider import ModelProviderConfig, ModelProviderMetadata
 from app.models.call_insights import CallInsightsAnalysis
+from app.models.insight_comparison import InsightComparison
 
 __all__ = [
     "BaseModel",
@@ -43,4 +44,5 @@ __all__ = [
     "ModelProviderConfig",
     "ModelProviderMetadata",
     "CallInsightsAnalysis",
+    "InsightComparison",
 ]

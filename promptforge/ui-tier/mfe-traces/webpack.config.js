@@ -14,6 +14,9 @@ module.exports = {
       'Access-Control-Allow-Origin': '*',
     },
   },
+  output: {
+    publicPath: 'auto',
+  },
   resolve: {
     extensions: ['.ts', '.tsx', '.js', '.jsx'],
     modules: [
@@ -52,7 +55,7 @@ module.exports = {
       name: 'traces',
       filename: 'remoteEntry.js',
       exposes: {
-        './App': './src/App',
+        './App': './src/bootstrap',
       },
       shared: {
         react: { singleton: true, requiredVersion: '^18.2.0' },

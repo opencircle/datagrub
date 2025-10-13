@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import FilterBar from './components/FilterBar';
 import TracesTable from './components/TracesTable';
 import Pagination from './components/Pagination';
@@ -7,6 +8,10 @@ import { useTraces } from '../../shared/hooks/useTraces';
 import { TraceListItem } from '../../shared/services/traceService';
 
 const App: React.FC = () => {
+  // URL params for deep linking
+  const { traceId } = useParams<{ traceId?: string }>();
+  const navigate = useNavigate();
+
   // UI State - separated from server state
   const [searchQuery, setSearchQuery] = useState('');
   const [modelFilter, setModelFilter] = useState('');
@@ -15,6 +20,13 @@ const App: React.FC = () => {
   const [sortColumn, setSortColumn] = useState<'requestId' | 'status' | 'duration' | 'timestamp'>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [selectedTraceId, setSelectedTraceId] = useState<string | null>(null);
+
+  // Handle deep linking to specific trace
+  useEffect(() => {
+    if (traceId) {
+      setSelectedTraceId(traceId);
+    }
+  }, [traceId]);
 
   const pageSize = 20;
 
@@ -50,12 +62,14 @@ const App: React.FC = () => {
     }
   };
 
-  const handleRowClick = (traceId: string) => {
-    setSelectedTraceId(traceId);
+  const handleRowClick = (clickedTraceId: string) => {
+    // Navigate to trace deep link (updates URL)
+    navigate(`/traces/${clickedTraceId}`);
   };
 
   const handleCloseModal = () => {
-    setSelectedTraceId(null);
+    // Navigate back to traces list (clears URL param)
+    navigate('/traces');
   };
 
   const handlePageChange = (page: number) => {

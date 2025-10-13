@@ -51,7 +51,7 @@ class CallInsightsModels(BaseModel):
 class CallInsightsAnalyzeRequest(BaseModel):
     """Request to analyze call transcript"""
     transcript: str = Field(..., min_length=100, max_length=100000, description="Call transcript text")
-    transcript_title: Optional[str] = Field(None, max_length=500, description="Optional title for searchability")
+    transcript_title: str = Field(..., min_length=1, max_length=500, description="Title for this analysis (required)")
     project_id: Optional[str] = Field(None, description="Project UUID to associate analysis with")
     stage_params: Optional[CallInsightsStageParams] = Field(None, description="Custom stage parameters")
     system_prompts: Optional[CallInsightsSystemPrompts] = Field(None, description="Custom system prompts for each stage")
@@ -141,6 +141,8 @@ class CallInsightsHistoryResponse(BaseModel):
     model_stage1: Optional[str] = None
     model_stage2: Optional[str] = None
     model_stage3: Optional[str] = None
+    # Analysis metadata (includes model_parameters)
+    analysis_metadata: Optional[dict] = None
     created_at: str
 
     class Config:
@@ -174,7 +176,7 @@ async def analyze_call_transcript(
         # Execute 3-stage analysis
         result = await insights_service.analyze_transcript(
             transcript=request.transcript,
-            transcript_title=request.transcript_title,
+            transcript_title=request.transcript_title.strip(),
             user_id=str(current_user.id),
             project_id=request.project_id,
             enable_pii_redaction=request.enable_pii_redaction,
@@ -452,5 +454,68 @@ async def get_analysis_by_id(
         model_stage1=analysis.model_stage1,
         model_stage2=analysis.model_stage2,
         model_stage3=analysis.model_stage3,
+        analysis_metadata=analysis.analysis_metadata,
+        created_at=analysis.created_at.isoformat(),
+    )
+
+
+class UpdateAnalysisTitleRequest(BaseModel):
+    """Request to update analysis title"""
+    transcript_title: str = Field(..., min_length=1, max_length=500, description="New title for the analysis")
+
+
+@router.patch("/{analysis_id}/title", response_model=CallInsightsHistoryResponse)
+async def update_analysis_title(
+    analysis_id: str,
+    request: UpdateAnalysisTitleRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update the title of a call insights analysis
+
+    Allows renaming analyses for better organization and searchability.
+    Only the analysis owner's organization can update the title.
+    """
+    # Get analysis
+    query = select(CallInsightsAnalysis).where(
+        and_(
+            CallInsightsAnalysis.id == analysis_id,
+            CallInsightsAnalysis.organization_id == current_user.organization_id
+        )
+    )
+    result = await db.execute(query)
+    analysis = result.scalar_one_or_none()
+
+    if not analysis:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Analysis not found"
+        )
+
+    # Update title
+    analysis.transcript_title = request.transcript_title
+    await db.commit()
+    await db.refresh(analysis)
+
+    # Return updated analysis
+    return CallInsightsHistoryResponse(
+        id=str(analysis.id),
+        transcript_title=analysis.transcript_title,
+        transcript_input=analysis.transcript_input,
+        summary_output=analysis.summary_output,
+        insights_output=analysis.insights_output,
+        facts_output=analysis.facts_output,
+        pii_redacted=analysis.pii_redacted,
+        total_tokens=analysis.total_tokens,
+        total_cost=analysis.total_cost,
+        project_id=str(analysis.project_id) if analysis.project_id else None,
+        system_prompt_stage1=analysis.system_prompt_stage1,
+        system_prompt_stage2=analysis.system_prompt_stage2,
+        system_prompt_stage3=analysis.system_prompt_stage3,
+        model_stage1=analysis.model_stage1,
+        model_stage2=analysis.model_stage2,
+        model_stage3=analysis.model_stage3,
+        analysis_metadata=analysis.analysis_metadata,
         created_at=analysis.created_at.isoformat(),
     )

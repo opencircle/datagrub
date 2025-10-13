@@ -288,6 +288,23 @@ class CallInsightsService:
             analysis_metadata={
                 "stage_count": 3,
                 "evaluation_count": len(evaluations),
+                "model_parameters": {
+                    "stage1": {
+                        "temperature": params["fact_extraction"]["temperature"],
+                        "top_p": params["fact_extraction"]["top_p"],
+                        "max_tokens": params["fact_extraction"]["max_tokens"],
+                    },
+                    "stage2": {
+                        "temperature": params["reasoning"]["temperature"],
+                        "top_p": params["reasoning"]["top_p"],
+                        "max_tokens": params["reasoning"]["max_tokens"],
+                    },
+                    "stage3": {
+                        "temperature": params["summary"]["temperature"],
+                        "top_p": params["summary"]["top_p"],
+                        "max_tokens": params["summary"]["max_tokens"],
+                    },
+                }
             }
         )
         self.db.add(analysis)

@@ -1,0 +1,195 @@
+{
+  "agent_name": "db_architect",
+  "initialized": "2025-10-06T00:54:14Z",
+  "last_updated": "2025-10-12T22:00:00Z",
+  "total_sessions": 1,
+  "validations": [],
+  "data_catalog": {
+    "last_documented": "2025-10-12T22:00:00Z",
+    "schema_version": "u0v1w2x3y4z5",
+    "total_tables": 17,
+    "domains": {
+      "core": 4,
+      "insights": 2,
+      "observability": 2,
+      "evaluation": 2,
+      "model_management": 3,
+      "prompt_management": 2,
+      "compliance": 2
+    },
+    "documentation_files": [
+      "api-tier/docs/DATABASE_SCHEMA.md",
+      "api-tier/docs/DATA_CATALOG.md"
+    ]
+  },
+  "schema_analysis": {
+    "total_columns": 287,
+    "foreign_keys": 45,
+    "unique_constraints": 12,
+    "check_constraints": 8,
+    "indexes": 63,
+    "jsonb_fields": 25,
+    "gin_indexes": 4
+  },
+  "key_entities": [
+    {
+      "name": "organizations",
+      "domain": "core",
+      "description": "Multi-tenant organizations",
+      "cardinality": "100-1000",
+      "retention": "permanent",
+      "relationships": ["users", "projects", "groups", "call_insights_analysis", "insight_comparisons", "model_provider_configs"]
+    },
+    {
+      "name": "call_insights_analysis",
+      "domain": "insights",
+      "description": "3-stage DTA pipeline results (Facts → Insights → Summary)",
+      "cardinality": "1000-100000 per org",
+      "retention": "2 years",
+      "relationships": ["organizations", "users", "projects", "traces", "insight_comparisons"]
+    },
+    {
+      "name": "insight_comparisons",
+      "domain": "insights",
+      "description": "Blind model comparison results using judge models",
+      "cardinality": "100-10000 per org",
+      "retention": "1 year",
+      "relationships": ["call_insights_analysis", "traces"]
+    },
+    {
+      "name": "traces",
+      "domain": "observability",
+      "description": "OpenTelemetry-compatible LLM call traces",
+      "cardinality": "10000-1000000 per org",
+      "retention": "90 days",
+      "relationships": ["projects", "spans", "call_insights_analysis", "policy_violations", "trace_evaluations"]
+    },
+    {
+      "name": "model_catalog",
+      "domain": "model_management",
+      "description": "Centralized AI model catalog with pricing and capabilities",
+      "cardinality": "50-200 models",
+      "retention": "permanent",
+      "relationships": ["referenced by traces, evaluations, analyses"]
+    }
+  ],
+  "data_quality_rules": {
+    "token_consistency": [
+      "traces.total_tokens = input_tokens + output_tokens",
+      "spans.total_tokens = prompt_tokens + completion_tokens"
+    ],
+    "cost_validation": [
+      "all cost fields >= 0"
+    ],
+    "timestamp_ordering": [
+      "created_at <= updated_at",
+      "spans.start_time < end_time"
+    ],
+    "model_reference_integrity": [
+      "all model_name fields should reference model_catalog.model_name"
+    ],
+    "winner_values": [
+      "insight_comparisons winners must be 'A', 'B', or 'tie'"
+    ]
+  },
+  "schema_issues": [
+    {
+      "table": "policy_violations",
+      "column": "resolved_at",
+      "issue": "Should be TIMESTAMP, currently VARCHAR(50)",
+      "priority": "low",
+      "impact": "Data type accepts timestamp strings but not type-safe"
+    },
+    {
+      "table": "call_insights_analysis",
+      "issue": "No full-text search support on transcript_title, transcript_input",
+      "priority": "medium",
+      "impact": "Poor search performance",
+      "recommendation": "Add tsvector columns with GIN indexes"
+    },
+    {
+      "tables": "multiple",
+      "issue": "No soft delete support (is_deleted flag)",
+      "priority": "medium",
+      "impact": "Impacts audit trail and GDPR compliance",
+      "recommendation": "Add is_deleted BOOLEAN DEFAULT false to core tables"
+    }
+  ],
+  "recent_migrations": [
+    {
+      "revision": "u0v1w2x3y4z5",
+      "date": "2025-10-11",
+      "description": "Added model_catalog table and judge_model_version column"
+    },
+    {
+      "revision": "n0p1q2r3s4t5",
+      "date": "2025-10-11",
+      "description": "Added insight_comparisons table for blind model comparison"
+    },
+    {
+      "revision": "4461438681f4",
+      "date": "2025-10-10",
+      "description": "Added encryption_keys table for API key encryption"
+    }
+  ],
+  "performance_recommendations": [
+    {
+      "recommendation": "Add tsvector column for full-text search on transcript_title",
+      "impact": "high",
+      "tables": ["call_insights_analysis"]
+    },
+    {
+      "recommendation": "Consider partitioning traces and spans by date for large deployments",
+      "impact": "medium",
+      "tables": ["traces", "spans"]
+    },
+    {
+      "recommendation": "Consider partitioning call_insights_analysis by organization for multi-tenant isolation",
+      "impact": "medium",
+      "tables": ["call_insights_analysis"]
+    },
+    {
+      "recommendation": "Add materialized views for dashboard queries (cost, token aggregations)",
+      "impact": "medium",
+      "benefit": "Faster dashboard loading"
+    }
+  ],
+  "data_governance": {
+    "pii_fields": [
+      "users.email",
+      "users.full_name",
+      "users.hashed_password",
+      "call_insights_analysis.transcript_input",
+      "traces.input_data",
+      "traces.output_data",
+      "model_provider_configs.api_key_encrypted"
+    ],
+    "encryption_strategy": {
+      "at_rest": "AES-256 for api_key_encrypted, bcrypt for passwords",
+      "in_transit": "TLS 1.3 for all connections"
+    },
+    "retention_policies": {
+      "users": "7 years after deletion (GDPR)",
+      "traces": "90 days (archive to S3)",
+      "call_insights_analysis": "2 years (archive to S3)",
+      "insight_comparisons": "1 year (archive to S3)"
+    }
+  },
+  "learned_patterns": {
+    "common_issues": {},
+    "project_conventions": {
+      "primary_keys": "UUID with gen_random_uuid()",
+      "timestamps": "created_at, updated_at on all tables",
+      "foreign_keys": "organization_id, user_id for RBAC",
+      "jsonb_usage": "Flexible metadata, not queryable attributes",
+      "indexes": "All FKs indexed, composite for time-series queries"
+    }
+  },
+  "next_steps": [
+    "Implement soft delete support (is_deleted flag)",
+    "Add full-text search support (tsvector columns)",
+    "Fix policy_violations.resolved_at data type",
+    "Consider table partitioning for scale",
+    "Add materialized views for dashboards"
+  ]
+}

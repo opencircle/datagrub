@@ -81,19 +81,22 @@ export const TranscriptInputSection: React.FC<Props> = ({ formState, setFormStat
         />
       </div>
 
-      {/* Transcript Title (Optional) */}
+      {/* Transcript Title (Required) */}
       <div>
         <label className="block text-sm font-semibold text-neutral-700 mb-2">
-          Title (Optional)
+          Title <span className="text-[#FF385C]">*</span>
         </label>
         <input
           type="text"
           value={formState.transcriptTitle}
           onChange={handleTitleChange}
-          placeholder="Give this analysis a title for easier search"
+          placeholder="e.g., Q4 Earnings Call with ABC Corp"
           maxLength={500}
           className="w-full h-10 px-3 rounded-xl border border-neutral-300 text-neutral-700 focus:outline-none focus:border-[#FF385C] focus:ring-4 focus:ring-[#FF385C]/20 transition-all duration-200 placeholder:text-neutral-400"
         />
+        <p className="mt-1 text-xs text-neutral-500">
+          Give this analysis a descriptive title to identify it in history, traces, and evaluations.
+        </p>
       </div>
 
       {/* Project ID (Optional) */}

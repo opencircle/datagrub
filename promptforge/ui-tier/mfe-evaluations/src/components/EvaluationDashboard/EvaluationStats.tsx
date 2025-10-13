@@ -118,7 +118,7 @@ export const EvaluationStats: React.FC = () => {
   if (loading) {
     return (
       <div className="h-48 flex items-center justify-center">
-        <div className="text-gray-500">Loading statistics...</div>
+        <div className="text-neutral-500">Loading statistics...</div>
       </div>
     );
   }
@@ -135,29 +135,29 @@ export const EvaluationStats: React.FC = () => {
         <div className="px-4 py-3 flex gap-6">
           {/* Total Runs */}
           <div className="flex flex-col">
-            <div className="text-xs text-gray-500 mb-0.5">Total Runs</div>
-            <div className="text-xl font-bold text-gray-900">{stats.totalRuns}</div>
+            <div className="text-xs text-neutral-500 mb-0.5">Total Runs</div>
+            <div className="text-xl font-bold text-neutral-900">{stats.totalRuns}</div>
           </div>
           {/* Avg Score */}
           <div className="flex flex-col">
-            <div className="text-xs text-gray-500 mb-0.5">Avg Score</div>
-            <div className="text-xl font-bold text-gray-900">{stats.avgScore.toFixed(2)}</div>
+            <div className="text-xs text-neutral-500 mb-0.5">Avg Score</div>
+            <div className="text-xl font-bold text-neutral-900">{stats.avgScore.toFixed(2)}</div>
           </div>
           {/* Pass Rate */}
           <div className="flex flex-col">
-            <div className="text-xs text-gray-500 mb-0.5">Pass Rate</div>
-            <div className="text-xl font-bold text-gray-900">{stats.passRate.toFixed(0)}%</div>
+            <div className="text-xs text-neutral-500 mb-0.5">Pass Rate</div>
+            <div className="text-xl font-bold text-neutral-900">{stats.passRate.toFixed(0)}%</div>
           </div>
         </div>
 
         {/* Column 2: By Category */}
         <div className="px-4 py-3">
-          <div className="text-xs text-gray-500 font-semibold mb-1.5">By Category</div>
+          <div className="text-xs text-neutral-500 font-semibold mb-1.5">By Category</div>
           <div className="space-y-0.5">
             {stats.byCategory.slice(0, 2).map((item) => (
               <div key={item.name} className="text-xs">
-                <span className="text-gray-900 capitalize">{item.name}</span>
-                <span className="text-gray-500 ml-2">{item.count}</span>
+                <span className="text-neutral-900 capitalize">{item.name}</span>
+                <span className="text-neutral-500 ml-2">{item.count}</span>
               </div>
             ))}
           </div>
@@ -165,12 +165,12 @@ export const EvaluationStats: React.FC = () => {
 
         {/* Column 3: By Vendor */}
         <div className="px-4 py-3">
-          <div className="text-xs text-gray-500 font-semibold mb-1.5">By Source</div>
+          <div className="text-xs text-neutral-500 font-semibold mb-1.5">By Source</div>
           <div className="space-y-0.5">
             {stats.byVendor.slice(0, 2).map((item) => (
               <div key={item.name} className="text-xs">
-                <span className="text-gray-900">{item.name}</span>
-                <span className="text-gray-500 ml-2">{item.count}</span>
+                <span className="text-neutral-900">{item.name}</span>
+                <span className="text-neutral-500 ml-2">{item.count}</span>
               </div>
             ))}
           </div>
@@ -178,14 +178,14 @@ export const EvaluationStats: React.FC = () => {
 
         {/* Column 4: By Project */}
         <div className="px-4 py-3">
-          <div className="text-xs text-gray-500 font-semibold mb-1.5">By Project</div>
+          <div className="text-xs text-neutral-500 font-semibold mb-1.5">By Project</div>
           <div className="space-y-0.5">
             {stats.byProject.slice(0, 2).map((item) => (
               <div key={item.name} className="text-xs">
-                <span className="text-gray-900 truncate inline-block max-w-[120px]" title={item.name}>
+                <span className="text-neutral-900 truncate inline-block max-w-[120px]" title={item.name}>
                   {item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name}
                 </span>
-                <span className="text-gray-500 ml-2">{item.count}</span>
+                <span className="text-neutral-500 ml-2">{item.count}</span>
               </div>
             ))}
           </div>

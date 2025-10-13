@@ -1106,3 +1106,369 @@ class TestCallInsightsGetById:
         random_id = str(uuid.uuid4())
         response = await client.get(f"/api/v1/call-insights/{random_id}")
         assert response.status_code == 403
+
+
+class TestCallInsightsRenameTitle:
+    """Test renaming analysis title endpoint"""
+
+    @pytest.mark.asyncio
+    async def test_update_title_success(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        test_project: Project,
+    ):
+        """
+        Test successfully updating analysis title
+        GIVEN: Existing analysis
+        WHEN: PATCH /api/v1/call-insights/{analysis_id}/title
+        THEN: Returns 200 with updated analysis
+        """
+        mock_result = ModelExecutionResult(
+            response="Test response",
+            tokens_used=100,
+            cost=0.002,
+            input_tokens=70,
+            output_tokens=30,
+            model="gpt-4",
+        )
+
+        with patch('app.services.model_provider.ModelProviderService.execute', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = mock_result
+
+            # Create analysis
+            create_response = await client.post(
+                "/api/v1/call-insights/analyze",
+                json={
+                    "transcript": SAMPLE_TRANSCRIPT,
+                    "transcript_title": "Original Title",
+                    "project_id": str(test_project.id),
+                },
+                headers=auth_headers,
+            )
+            analysis_id = create_response.json()["analysis_id"]
+
+        # Update title
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": "Updated Title"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Validate updated title
+        assert data["id"] == analysis_id
+        assert data["transcript_title"] == "Updated Title"
+        assert data["transcript_input"] == SAMPLE_TRANSCRIPT  # Other fields unchanged
+
+        # Verify update persisted by retrieving again
+        get_response = await client.get(
+            f"/api/v1/call-insights/{analysis_id}",
+            headers=auth_headers,
+        )
+        assert get_response.status_code == 200
+        assert get_response.json()["transcript_title"] == "Updated Title"
+
+    @pytest.mark.asyncio
+    async def test_update_title_multiple_times(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ):
+        """
+        Test updating title multiple times
+        GIVEN: Existing analysis
+        WHEN: PATCH title multiple times
+        THEN: Each update succeeds and latest title is persisted
+        """
+        mock_result = ModelExecutionResult(
+            response="Test",
+            tokens_used=100,
+            cost=0.002,
+            input_tokens=70,
+            output_tokens=30,
+            model="gpt-4",
+        )
+
+        with patch('app.services.model_provider.ModelProviderService.execute', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = mock_result
+
+            # Create analysis
+            create_response = await client.post(
+                "/api/v1/call-insights/analyze",
+                json={
+                    "transcript": SAMPLE_TRANSCRIPT,
+                    "transcript_title": "Title Version 1",
+                },
+                headers=auth_headers,
+            )
+            analysis_id = create_response.json()["analysis_id"]
+
+        # Update to Version 2
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": "Title Version 2"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["transcript_title"] == "Title Version 2"
+
+        # Update to Version 3
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": "Title Version 3"},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+        assert response.json()["transcript_title"] == "Title Version 3"
+
+        # Verify final title persisted
+        get_response = await client.get(
+            f"/api/v1/call-insights/{analysis_id}",
+            headers=auth_headers,
+        )
+        assert get_response.json()["transcript_title"] == "Title Version 3"
+
+    @pytest.mark.asyncio
+    async def test_update_title_not_found(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ):
+        """
+        Test updating title for non-existent analysis
+        GIVEN: Random UUID that doesn't exist
+        WHEN: PATCH /api/v1/call-insights/{random_uuid}/title
+        THEN: Returns 404 Not Found
+        """
+        random_id = str(uuid.uuid4())
+        response = await client.patch(
+            f"/api/v1/call-insights/{random_id}/title",
+            json={"transcript_title": "New Title"},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 404
+        data = response.json()
+        assert data["detail"] == "Analysis not found"
+
+    @pytest.mark.asyncio
+    async def test_update_title_empty_string(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ):
+        """
+        Test validation: empty title not allowed
+        GIVEN: Existing analysis
+        WHEN: PATCH with empty title string
+        THEN: Returns 422 validation error
+        """
+        mock_result = ModelExecutionResult(
+            response="Test",
+            tokens_used=100,
+            cost=0.002,
+            input_tokens=70,
+            output_tokens=30,
+            model="gpt-4",
+        )
+
+        with patch('app.services.model_provider.ModelProviderService.execute', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = mock_result
+
+            create_response = await client.post(
+                "/api/v1/call-insights/analyze",
+                json={
+                    "transcript": SAMPLE_TRANSCRIPT,
+                    "transcript_title": "Original",
+                },
+                headers=auth_headers,
+            )
+            analysis_id = create_response.json()["analysis_id"]
+
+        # Try to update with empty string
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": ""},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
+        data = response.json()
+        assert "detail" in data
+
+    @pytest.mark.asyncio
+    async def test_update_title_too_long(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ):
+        """
+        Test validation: title exceeds max length
+        GIVEN: Existing analysis
+        WHEN: PATCH with title > 500 characters
+        THEN: Returns 422 validation error
+        """
+        mock_result = ModelExecutionResult(
+            response="Test",
+            tokens_used=100,
+            cost=0.002,
+            input_tokens=70,
+            output_tokens=30,
+            model="gpt-4",
+        )
+
+        with patch('app.services.model_provider.ModelProviderService.execute', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = mock_result
+
+            create_response = await client.post(
+                "/api/v1/call-insights/analyze",
+                json={
+                    "transcript": SAMPLE_TRANSCRIPT,
+                    "transcript_title": "Original",
+                },
+                headers=auth_headers,
+            )
+            analysis_id = create_response.json()["analysis_id"]
+
+        # Try to update with title > 500 chars
+        long_title = "x" * 501
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": long_title},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_title_missing_field(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+    ):
+        """
+        Test validation: missing transcript_title field
+        GIVEN: Existing analysis
+        WHEN: PATCH without transcript_title in body
+        THEN: Returns 422 validation error
+        """
+        random_id = str(uuid.uuid4())
+        response = await client.patch(
+            f"/api/v1/call-insights/{random_id}/title",
+            json={},
+            headers=auth_headers,
+        )
+
+        assert response.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_update_title_unauthenticated(
+        self,
+        client: AsyncClient,
+    ):
+        """
+        Test updating title without authentication
+        GIVEN: No auth token
+        WHEN: PATCH /api/v1/call-insights/{analysis_id}/title
+        THEN: Returns 403 Forbidden
+        """
+        random_id = str(uuid.uuid4())
+        response = await client.patch(
+            f"/api/v1/call-insights/{random_id}/title",
+            json={"transcript_title": "New Title"},
+        )
+
+        assert response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_update_title_organization_isolation(
+        self,
+        client: AsyncClient,
+        auth_headers: dict,
+        db_session: AsyncSession,
+    ):
+        """
+        Test that users cannot update analyses from other organizations
+        GIVEN: Analysis from Organization A
+        WHEN: User from Organization B tries to update title
+        THEN: Returns 404 (not found, not unauthorized - for security)
+        """
+        from app.models.user import Organization
+        from app.core.security import get_password_hash
+
+        # Create second organization and user
+        org2 = Organization(
+            id=uuid.uuid4(),
+            name="Other Organization",
+            description="Different org for testing",
+        )
+        db_session.add(org2)
+        await db_session.commit()
+
+        user2 = User(
+            id=uuid.uuid4(),
+            email="other@example.com",
+            hashed_password=get_password_hash("password"),
+            full_name="Other User",
+            organization_id=org2.id,
+            is_active=True,
+        )
+        db_session.add(user2)
+        await db_session.commit()
+
+        # Create analysis with first user
+        mock_result = ModelExecutionResult(
+            response="Test",
+            tokens_used=100,
+            cost=0.002,
+            input_tokens=70,
+            output_tokens=30,
+            model="gpt-4",
+        )
+
+        with patch('app.services.model_provider.ModelProviderService.execute', new_callable=AsyncMock) as mock_execute:
+            mock_execute.return_value = mock_result
+
+            create_response = await client.post(
+                "/api/v1/call-insights/analyze",
+                json={
+                    "transcript": SAMPLE_TRANSCRIPT,
+                    "transcript_title": "Org 1 Analysis",
+                },
+                headers=auth_headers,
+            )
+            analysis_id = create_response.json()["analysis_id"]
+
+        # Login as second user
+        login_response = await client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "other@example.com",
+                "password": "password",
+            },
+        )
+        other_auth_headers = {
+            "Authorization": f"Bearer {login_response.json()['access_token']}"
+        }
+
+        # Try to update analysis from other org
+        response = await client.patch(
+            f"/api/v1/call-insights/{analysis_id}/title",
+            json={"transcript_title": "Hacked Title"},
+            headers=other_auth_headers,
+        )
+
+        # Should return 404 (not found) for security reasons
+        # Don't reveal that the analysis exists in another org
+        assert response.status_code == 404
+        assert response.json()["detail"] == "Analysis not found"
+
+        # Verify original title unchanged
+        original_get = await client.get(
+            f"/api/v1/call-insights/{analysis_id}",
+            headers=auth_headers,
+        )
+        assert original_get.json()["transcript_title"] == "Org 1 Analysis"

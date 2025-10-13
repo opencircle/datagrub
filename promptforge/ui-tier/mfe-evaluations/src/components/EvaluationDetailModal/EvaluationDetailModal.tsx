@@ -74,7 +74,7 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
   };
 
   const getScoreColor = (score: number | null) => {
-    if (score === null) return 'text-gray-400';
+    if (score === null) return 'text-neutral-400';
     if (score >= 0.8) return 'text-green-600';
     if (score >= 0.5) return 'text-yellow-600';
     return 'text-red-600';
@@ -86,7 +86,7 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
   };
 
   const getScoreBarColor = (score: number | null) => {
-    if (score === null) return 'bg-gray-300';
+    if (score === null) return 'bg-neutral-300';
     if (score >= 0.8) return 'bg-green-500';
     if (score >= 0.5) return 'bg-yellow-500';
     return 'bg-red-500';
@@ -116,10 +116,10 @@ export const EvaluationDetailModal: React.FC<EvaluationDetailModalProps> = ({
       >
         <div className="bg-white rounded-xl p-8 max-w-md" onClick={(e) => e.stopPropagation()}>
           <h3 className="text-lg font-semibold text-red-600 mb-2">Error</h3>
-          <p className="text-gray-600 mb-4">{error || 'Evaluation not found'}</p>
+          <p className="text-neutral-600 mb-4">{error || 'Evaluation not found'}</p>
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            className="w-full px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200"
           >
             Close
           </button>

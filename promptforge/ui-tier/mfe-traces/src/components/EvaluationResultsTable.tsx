@@ -142,7 +142,7 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
   }> = ({ column, children, align = 'left' }) => (
     <button
       onClick={() => handleSort(column)}
-      className={`flex items-center gap-1 hover:text-gray-900 transition-colors ${
+      className={`flex items-center gap-1 hover:text-neutral-900 transition-colors ${
         align === 'right' ? 'ml-auto' : ''
       }`}
       aria-label={`Sort by ${column}`}
@@ -199,14 +199,14 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
     // For classifiers
     if (evaluation.evaluation_type === 'classifier' && evaluation.category_result) {
       return (
-        <span className="text-sm text-gray-700">
+        <span className="text-sm text-neutral-700">
           {evaluation.category_result}
         </span>
       );
     }
 
     return (
-      <span className="text-sm text-gray-500">
+      <span className="text-sm text-neutral-500">
         N/A
       </span>
     );
@@ -221,7 +221,7 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
     };
 
     return (
-      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[source] || 'bg-gray-100 text-gray-700'}`}>
+      <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${colors[source] || 'bg-neutral-100 text-neutral-700'}`}>
         {source.replace('_', ' ').toUpperCase()}
       </span>
     );
@@ -229,39 +229,39 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
   if (evaluations.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-600">
+      <div className="text-center py-8 text-neutral-600">
         No evaluations available
       </div>
     );
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-neutral-200 rounded-lg overflow-hidden">
       <table className="w-full">
-        <thead className="bg-gray-50 border-b border-gray-200">
+        <thead className="bg-neutral-50 border-b border-neutral-200">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="name">Name</SortButton>
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="category">Category</SortButton>
             </th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-left text-xs font-medium text-neutral-700 uppercase tracking-wide">
               Source
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-right text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="score" align="right">Score</SortButton>
             </th>
-            <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-center text-xs font-medium text-neutral-700 uppercase tracking-wide">
               Result
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-right text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="tokens" align="right">Tokens</SortButton>
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-right text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="cost" align="right">Cost</SortButton>
             </th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wide">
+            <th className="px-4 py-3 text-right text-xs font-medium text-neutral-700 uppercase tracking-wide">
               <SortButton column="executionTime" align="right">Time</SortButton>
             </th>
           </tr>
@@ -270,12 +270,12 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
           {sortedEvaluations.map((evaluation, index) => (
             <React.Fragment key={evaluation.id}>
               <tr
-                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                className={`border-b border-neutral-100 hover:bg-neutral-50 transition-colors cursor-pointer ${
                   index === sortedEvaluations.length - 1 ? 'last:border-b-0' : ''
                 }`}
                 onClick={() => toggleRow(evaluation.id)}
               >
-                <td className="px-4 py-3 text-sm text-gray-900">
+                <td className="px-4 py-3 text-sm text-neutral-900">
                   <div className="flex items-center gap-2">
                     <span>{evaluation.evaluation_name}</span>
                     {evaluation.vendor_name && (
@@ -285,13 +285,13 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700 capitalize">
+                <td className="px-4 py-3 text-sm text-neutral-700 capitalize">
                   {evaluation.category}
                 </td>
                 <td className="px-4 py-3">
                   {getSourceBadge(evaluation.evaluation_source)}
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-neutral-700 tabular-nums">
                   {evaluation.score !== undefined && evaluation.score !== null ?
                     (evaluation.score * 100).toFixed(1) + '%' : '-'}
                 </td>
@@ -304,33 +304,33 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                     )
                   ) : '-'}
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-neutral-700 tabular-nums">
                   {evaluation.total_tokens ? evaluation.total_tokens.toLocaleString() : '-'}
                 </td>
-                <td className="px-4 py-3 text-right text-sm text-gray-700 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-neutral-700 tabular-nums">
                   {evaluation.evaluation_cost ? `$${evaluation.evaluation_cost.toFixed(4)}` : '-'}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700 text-right tabular-nums">
+                <td className="px-4 py-3 text-sm text-neutral-700 text-right tabular-nums">
                   {evaluation.execution_time_ms ? `${evaluation.execution_time_ms.toFixed(0)}ms` : '-'}
                 </td>
               </tr>
               {expandedRows.has(evaluation.id) && (
-                <tr className="bg-gray-50">
+                <tr className="bg-neutral-50">
                   <td colSpan={8} className="px-4 py-4">
                     <div className="space-y-3 text-sm">
                       {/* Reason */}
                       {evaluation.reason && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Reason</div>
-                          <div className="text-gray-700">{evaluation.reason}</div>
+                          <div className="font-medium text-neutral-900 mb-1">Reason</div>
+                          <div className="text-neutral-700">{evaluation.reason}</div>
                         </div>
                       )}
 
                       {/* Token Breakdown */}
                       {(evaluation.input_tokens || evaluation.output_tokens) && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Token Usage</div>
-                          <div className="grid grid-cols-3 gap-2 text-gray-700">
+                          <div className="font-medium text-neutral-900 mb-1">Token Usage</div>
+                          <div className="grid grid-cols-3 gap-2 text-neutral-700">
                             <div>Input: {evaluation.input_tokens?.toLocaleString() || 0}</div>
                             <div>Output: {evaluation.output_tokens?.toLocaleString() || 0}</div>
                             <div>Total: {evaluation.total_tokens?.toLocaleString() || 0}</div>
@@ -341,24 +341,24 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                       {/* Model Used */}
                       {evaluation.model_used && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Model</div>
-                          <div className="text-gray-700">{evaluation.model_used}</div>
+                          <div className="font-medium text-neutral-900 mb-1">Model</div>
+                          <div className="text-neutral-700">{evaluation.model_used}</div>
                         </div>
                       )}
 
                       {/* LLM Metadata - Comprehensive Metrics */}
                       {evaluation.llm_metadata && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-2">LLM Performance Metrics</div>
+                          <div className="font-medium text-neutral-900 mb-2">LLM Performance Metrics</div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Provider & Model */}
                             {evaluation.llm_metadata.provider && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Provider & Model</div>
-                                <div className="text-sm text-gray-900">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Provider & Model</div>
+                                <div className="text-sm text-neutral-900">
                                   {evaluation.llm_metadata.provider}
                                   {evaluation.llm_metadata.provider_model && (
-                                    <span className="text-gray-600"> / {evaluation.llm_metadata.provider_model}</span>
+                                    <span className="text-neutral-600"> / {evaluation.llm_metadata.provider_model}</span>
                                   )}
                                 </div>
                               </div>
@@ -366,25 +366,25 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
                             {/* Token Usage (enhanced with cache metrics) */}
                             {evaluation.llm_metadata.token_usage && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Token Usage</div>
-                                <div className="text-sm text-gray-900 space-y-1">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Token Usage</div>
+                                <div className="text-sm text-neutral-900 space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Input:</span>
+                                    <span className="text-neutral-600">Input:</span>
                                     <span className="font-mono">{evaluation.llm_metadata.token_usage.input_tokens?.toLocaleString() || 0}</span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Output:</span>
+                                    <span className="text-neutral-600">Output:</span>
                                     <span className="font-mono">{evaluation.llm_metadata.token_usage.output_tokens?.toLocaleString() || 0}</span>
                                   </div>
                                   {evaluation.llm_metadata.token_usage.cache_read_tokens !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Cache Read:</span>
+                                      <span className="text-neutral-600">Cache Read:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.token_usage.cache_read_tokens?.toLocaleString() || 0}</span>
                                     </div>
                                   )}
-                                  <div className="flex justify-between font-medium border-t border-gray-200 pt-1 mt-1">
-                                    <span className="text-gray-900">Total:</span>
+                                  <div className="flex justify-between font-medium border-t border-neutral-200 pt-1 mt-1">
+                                    <span className="text-neutral-900">Total:</span>
                                     <span className="font-mono">{evaluation.llm_metadata.token_usage.total_tokens?.toLocaleString() || 0}</span>
                                   </div>
                                 </div>
@@ -393,25 +393,25 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
                             {/* Cost Metrics */}
                             {evaluation.llm_metadata.cost_metrics && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Cost Breakdown</div>
-                                <div className="text-sm text-gray-900 space-y-1">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Cost Breakdown</div>
+                                <div className="text-sm text-neutral-900 space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Input:</span>
+                                    <span className="text-neutral-600">Input:</span>
                                     <span className="font-mono">${evaluation.llm_metadata.cost_metrics.input_cost?.toFixed(6) || '0.000000'}</span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Output:</span>
+                                    <span className="text-neutral-600">Output:</span>
                                     <span className="font-mono">${evaluation.llm_metadata.cost_metrics.output_cost?.toFixed(6) || '0.000000'}</span>
                                   </div>
                                   {evaluation.llm_metadata.cost_metrics.cache_read_cost !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Cache Read:</span>
+                                      <span className="text-neutral-600">Cache Read:</span>
                                       <span className="font-mono">${evaluation.llm_metadata.cost_metrics.cache_read_cost?.toFixed(6) || '0.000000'}</span>
                                     </div>
                                   )}
-                                  <div className="flex justify-between font-medium border-t border-gray-200 pt-1 mt-1">
-                                    <span className="text-gray-900">Total:</span>
+                                  <div className="flex justify-between font-medium border-t border-neutral-200 pt-1 mt-1">
+                                    <span className="text-neutral-900">Total:</span>
                                     <span className="font-mono">${evaluation.llm_metadata.cost_metrics.total_cost?.toFixed(6) || '0.000000'}</span>
                                   </div>
                                 </div>
@@ -420,22 +420,22 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
                             {/* Performance Metrics */}
                             {evaluation.llm_metadata.performance_metrics && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Performance</div>
-                                <div className="text-sm text-gray-900 space-y-1">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Performance</div>
+                                <div className="text-sm text-neutral-900 space-y-1">
                                   <div className="flex justify-between">
-                                    <span className="text-gray-600">Duration:</span>
+                                    <span className="text-neutral-600">Duration:</span>
                                     <span className="font-mono">{evaluation.llm_metadata.performance_metrics.total_duration_ms?.toFixed(0) || 0}ms</span>
                                   </div>
                                   {evaluation.llm_metadata.performance_metrics.time_to_first_token_ms !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">TTFT:</span>
+                                      <span className="text-neutral-600">TTFT:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.performance_metrics.time_to_first_token_ms?.toFixed(0) || 0}ms</span>
                                     </div>
                                   )}
                                   {evaluation.llm_metadata.performance_metrics.tokens_per_second !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Throughput:</span>
+                                      <span className="text-neutral-600">Throughput:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.performance_metrics.tokens_per_second?.toFixed(1) || 0} tok/s</span>
                                     </div>
                                   )}
@@ -445,24 +445,24 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
                             {/* Request Parameters */}
                             {evaluation.llm_metadata.request_parameters && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Request Parameters</div>
-                                <div className="text-sm text-gray-900 space-y-1">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Request Parameters</div>
+                                <div className="text-sm text-neutral-900 space-y-1">
                                   {evaluation.llm_metadata.request_parameters.temperature !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Temperature:</span>
+                                      <span className="text-neutral-600">Temperature:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.request_parameters.temperature}</span>
                                     </div>
                                   )}
                                   {evaluation.llm_metadata.request_parameters.top_p !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Top P:</span>
+                                      <span className="text-neutral-600">Top P:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.request_parameters.top_p}</span>
                                     </div>
                                   )}
                                   {evaluation.llm_metadata.request_parameters.max_tokens !== undefined && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Max Tokens:</span>
+                                      <span className="text-neutral-600">Max Tokens:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.request_parameters.max_tokens}</span>
                                     </div>
                                   )}
@@ -472,18 +472,18 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
 
                             {/* Response Metadata */}
                             {evaluation.llm_metadata.response_metadata && (
-                              <div className="bg-gray-50 rounded-lg p-3">
-                                <div className="text-xs text-gray-600 mb-1">Response Info</div>
-                                <div className="text-sm text-gray-900 space-y-1">
+                              <div className="bg-neutral-50 rounded-lg p-3">
+                                <div className="text-xs text-neutral-600 mb-1">Response Info</div>
+                                <div className="text-sm text-neutral-900 space-y-1">
                                   {evaluation.llm_metadata.response_metadata.finish_reason && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Finish:</span>
+                                      <span className="text-neutral-600">Finish:</span>
                                       <span className="font-mono">{evaluation.llm_metadata.response_metadata.finish_reason}</span>
                                     </div>
                                   )}
                                   {evaluation.llm_metadata.response_metadata.request_id && (
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Request ID:</span>
+                                      <span className="text-neutral-600">Request ID:</span>
                                       <span className="font-mono text-xs truncate max-w-[150px]" title={evaluation.llm_metadata.response_metadata.request_id}>
                                         {evaluation.llm_metadata.response_metadata.request_id}
                                       </span>
@@ -499,8 +499,8 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                       {/* Vendor Metrics */}
                       {evaluation.vendor_metrics && Object.keys(evaluation.vendor_metrics).length > 0 && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Vendor Metrics</div>
-                          <pre className="text-xs bg-white border border-gray-200 rounded p-2 overflow-x-auto">
+                          <div className="font-medium text-neutral-900 mb-1">Vendor Metrics</div>
+                          <pre className="text-xs bg-white border border-neutral-200 rounded p-2 overflow-x-auto">
                             {JSON.stringify(evaluation.vendor_metrics, null, 2)}
                           </pre>
                         </div>
@@ -509,8 +509,8 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                       {/* Details */}
                       {evaluation.details && Object.keys(evaluation.details).length > 0 && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Details</div>
-                          <pre className="text-xs bg-white border border-gray-200 rounded p-2 overflow-x-auto">
+                          <div className="font-medium text-neutral-900 mb-1">Details</div>
+                          <pre className="text-xs bg-white border border-neutral-200 rounded p-2 overflow-x-auto">
                             {JSON.stringify(evaluation.details, null, 2)}
                           </pre>
                         </div>
@@ -519,8 +519,8 @@ const EvaluationResultsTable: React.FC<EvaluationResultsTableProps> = ({ evaluat
                       {/* Suggestions */}
                       {evaluation.suggestions && evaluation.suggestions.length > 0 && (
                         <div>
-                          <div className="font-medium text-gray-900 mb-1">Suggestions</div>
-                          <ul className="list-disc list-inside text-gray-700 space-y-1">
+                          <div className="font-medium text-neutral-900 mb-1">Suggestions</div>
+                          <ul className="list-disc list-inside text-neutral-700 space-y-1">
                             {evaluation.suggestions.map((suggestion, idx) => (
                               <li key={idx}>{suggestion}</li>
                             ))}
