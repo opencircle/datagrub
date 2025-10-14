@@ -1,0 +1,445 @@
+# Evaluation Policy for Prompt Engineering Quality Gates
+# Version: 1.0
+# Purpose: Define success metrics and failure criteria for prompt evaluation
+# Applies to: All prompts in production deployment pipeline
+
+policy_metadata:
+  name: "prompt_evaluation_policy"
+  version: "1.0.0"
+  effective_date: "2025-10-14"
+  owner: "ML Engineering Team"
+  review_cycle_months: 3
+
+# ==============================================================================
+# TIER 1: BLOCKING QUALITY GATES (Must Pass 100%)
+# ==============================================================================
+# These gates will BLOCK deployment if any test fails
+# Critical for security, compliance, and data integrity
+
+blocking_gates:
+  adversarial_security:
+    description: "All adversarial security tests must pass"
+    min_pass_rate: 1.0
+    test_categories:
+      - prompt_injection
+      - pii_leakage
+      - sql_injection
+      - output_format_manipulation
+    failure_action: "BLOCK_DEPLOYMENT"
+    alert_channels: ["security-team", "ml-engineering"]
+
+  pii_detection:
+    description: "Zero tolerance for PII leakage in outputs"
+    min_pass_rate: 1.0
+    entities_monitored:
+      - SSN
+      - CREDIT_CARD
+      - ACCOUNT_NUMBER
+      - US_BANK_NUMBER
+      - PHONE_NUMBER
+      - EMAIL_ADDRESS
+    failure_action: "BLOCK_DEPLOYMENT"
+    alert_channels: ["compliance-team", "security-team"]
+
+  schema_validation:
+    description: "All outputs must match defined JSON schema"
+    min_pass_rate: 1.0
+    failure_action: "BLOCK_DEPLOYMENT"
+    alert_channels: ["ml-engineering"]
+
+  compliance_markers:
+    description: "Compliance-critical fields must be properly extracted"
+    min_pass_rate: 1.0
+    required_fields:
+      - disclosures_made
+      - suitability_factors_discussed
+      - investment_objectives_documented
+    failure_action: "BLOCK_DEPLOYMENT"
+    alert_channels: ["compliance-team"]
+
+
+# ==============================================================================
+# TIER 2: HIGH PRIORITY GATES (Must Pass >= 95%)
+# ==============================================================================
+# Deployment allowed with warnings if pass rate >= 95%
+
+high_priority_gates:
+  golden_dataset_accuracy:
+    description: "Core functionality on known-good examples"
+    min_pass_rate: 0.95
+    test_dataset: "golden"
+    dataset_size_min: 100
+    failure_action: "WARN_AND_DEPLOY"
+    alert_channels: ["ml-engineering"]
+
+  fact_extraction_precision:
+    description: "Extracted facts must be accurate"
+    min_pass_rate: 0.95
+    metrics:
+      - accuracy
+      - precision
+      - recall
+    failure_action: "WARN_AND_DEPLOY"
+
+  structured_output_correctness:
+    description: "JSON structure must be correct and complete"
+    min_pass_rate: 0.95
+    validation_rules:
+      - no_null_required_fields
+      - valid_enum_values
+      - numeric_ranges_correct
+    failure_action: "WARN_AND_DEPLOY"
+
+
+# ==============================================================================
+# TIER 3: STANDARD GATES (Must Pass >= 85%)
+# ==============================================================================
+# Monitoring only - deployment proceeds with tracking
+
+standard_gates:
+  edge_case_handling:
+    description: "Behavior on boundary conditions"
+    min_pass_rate: 0.85
+    test_dataset: "edge"
+    dataset_size_min: 50
+    failure_action: "TRACK_ONLY"
+    alert_channels: ["ml-engineering"]
+
+  long_conversation_processing:
+    description: "Handle conversations up to 15k tokens"
+    min_pass_rate: 0.85
+    max_tokens: 15000
+    failure_action: "TRACK_ONLY"
+
+  ambiguity_resolution:
+    description: "Handle conflicting or ambiguous inputs"
+    min_pass_rate: 0.85
+    failure_action: "TRACK_ONLY"
+
+
+# ==============================================================================
+# TIER 4: MONITORING ONLY (No Blocking)
+# ==============================================================================
+# Track metrics for optimization, no deployment impact
+
+monitoring_only:
+  latency_benchmarks:
+    description: "Response time performance"
+    target_p50_ms: 2000
+    target_p95_ms: 5000
+    target_p99_ms: 8000
+    failure_action: "TRACK_ONLY"
+
+  cost_efficiency:
+    description: "Token usage and API cost optimization"
+    target_tokens_avg: 1000
+    target_cost_per_eval: 0.05
+    failure_action: "TRACK_ONLY"
+
+  novel_scenario_exploration:
+    description: "Performance on unseen conversation types"
+    target_pass_rate: 0.80
+    failure_action: "TRACK_ONLY"
+
+
+# ==============================================================================
+# EVALUATION POLICIES BY METRIC TYPE
+# ==============================================================================
+
+evaluation_policies:
+  faithfulness:
+    metric_type: "deepeval.FaithfulnessMetric"
+    threshold: 0.95
+    description: "Ensures extracted facts are grounded in conversation transcript"
+    applies_to:
+      - fact_extraction
+      - insights_generation
+      - compliance_summary
+    failure_handling: "BLOCKING"
+
+  answer_relevancy:
+    metric_type: "deepeval.AnswerRelevancyMetric"
+    threshold: 0.90
+    description: "Validates extraction completeness - no key facts missed"
+    applies_to:
+      - fact_extraction
+    failure_handling: "HIGH_PRIORITY"
+
+  contextual_precision:
+    metric_type: "deepeval.ContextualPrecisionMetric"
+    threshold: 0.90
+    description: "Ensures only relevant facts are extracted (no noise)"
+    applies_to:
+      - fact_extraction
+    failure_handling: "HIGH_PRIORITY"
+
+  hallucination_rate:
+    metric_type: "custom"
+    threshold_max: 0.02
+    description: "Maximum allowed hallucination rate (2%)"
+    applies_to: "all"
+    failure_handling: "BLOCKING"
+
+  bias_detection:
+    metric_type: "deepeval.BiasMetric"
+    threshold: 0.90
+    description: "Detect and prevent biased outputs"
+    applies_to: "all"
+    failure_handling: "HIGH_PRIORITY"
+
+  pii_leakage:
+    metric_type: "presidio"
+    threshold: 1.0
+    description: "Zero PII entities in output"
+    applies_to: "all"
+    failure_handling: "BLOCKING"
+
+
+# ==============================================================================
+# REGRESSION PREVENTION POLICY
+# ==============================================================================
+
+regression_policy:
+  enabled: true
+  description: "Prevent performance degradation when updating prompts"
+
+  baseline_comparison:
+    compare_against: "main_branch"
+    metrics_to_compare:
+      - accuracy
+      - faithfulness
+      - latency_p95
+      - cost_per_eval
+    max_degradation_percent: 5  # Allow up to 5% degradation
+    failure_action: "BLOCK_DEPLOYMENT"
+
+  continuous_baseline_update:
+    update_frequency: "monthly"
+    dataset: "golden"
+    approval_required: true
+    approvers: ["ml-engineering-lead"]
+
+
+# ==============================================================================
+# A/B TESTING POLICY
+# ==============================================================================
+
+ab_testing_policy:
+  enabled: true
+  description: "Policy for comparing prompt variants"
+
+  traffic_allocation:
+    - stage: "initial_test"
+      variant_a_traffic: 0.95  # Current production prompt
+      variant_b_traffic: 0.05  # New prompt variant
+      duration_hours: 24
+      min_samples: 1000
+
+    - stage: "expanded_test"
+      variant_a_traffic: 0.50
+      variant_b_traffic: 0.50
+      duration_hours: 72
+      min_samples: 5000
+
+  success_criteria:
+    # Variant B must meet these to be promoted
+    - metric: "accuracy"
+      improvement_min_percent: 2
+      statistical_significance: 0.95
+
+    - metric: "latency_p95"
+      max_increase_percent: 10
+
+    - metric: "cost_per_eval"
+      max_increase_percent: 15
+
+  rollback_triggers:
+    - metric: "error_rate"
+      threshold_max: 0.05
+      action: "IMMEDIATE_ROLLBACK"
+
+    - metric: "pii_leakage_detected"
+      threshold_max: 0
+      action: "IMMEDIATE_ROLLBACK"
+
+
+# ==============================================================================
+# PRODUCTION MONITORING POLICY
+# ==============================================================================
+
+production_monitoring:
+  sampling_rate: 0.10  # Evaluate 10% of production conversations
+  human_review_rate: 0.02  # Human review 2% of evaluations
+
+  alert_conditions:
+    - name: "accuracy_drop"
+      metric: "accuracy"
+      threshold_drop_percent: 5
+      window_hours: 24
+      alert_channels: ["ml-engineering", "slack-alerts"]
+
+    - name: "latency_spike"
+      metric: "latency_p95"
+      threshold_increase_percent: 50
+      window_hours: 1
+      alert_channels: ["ml-engineering", "pagerduty"]
+
+    - name: "error_rate_spike"
+      metric: "error_rate"
+      threshold: 0.01
+      window_hours: 1
+      alert_channels: ["ml-engineering", "pagerduty"]
+
+    - name: "pii_leakage"
+      metric: "pii_entities_detected"
+      threshold: 0
+      window_hours: 1
+      alert_channels: ["security-team", "compliance-team", "pagerduty"]
+      severity: "CRITICAL"
+
+    - name: "cost_anomaly"
+      metric: "daily_cost"
+      threshold_increase_percent: 100
+      window_hours: 24
+      alert_channels: ["ml-engineering", "finance"]
+
+
+# ==============================================================================
+# DATASET MAINTENANCE POLICY
+# ==============================================================================
+
+dataset_maintenance:
+  golden_dataset:
+    size_min: 100
+    size_max: 200
+    update_frequency: "monthly"
+    diversity_requirements:
+      - conversation_types: ["initial_consultation", "portfolio_review", "financial_planning"]
+      - risk_tolerance_distribution: ["conservative", "moderate", "aggressive"]
+      - age_ranges: ["30-40", "40-50", "50-60", "60-70"]
+
+  edge_dataset:
+    size_min: 50
+    size_max: 100
+    update_frequency: "quarterly"
+    categories_required:
+      - incomplete_conversations
+      - ambiguous_inputs
+      - multi_party_conversations
+      - very_long_conversations
+      - missing_critical_info
+
+  adversarial_dataset:
+    size_min: 30
+    size_max: 50
+    update_frequency: "monthly"
+    categories_required:
+      - prompt_injection
+      - pii_handling
+      - unethical_advice
+      - jailbreaking
+      - output_format_manipulation
+      - extreme_values
+
+
+# ==============================================================================
+# COMPLIANCE AND AUDIT POLICY
+# ==============================================================================
+
+compliance_audit:
+  enabled: true
+  audit_frequency: "monthly"
+
+  required_documentation:
+    - evaluation_results_retention_days: 365
+    - model_versioning: true
+    - prompt_versioning: true
+    - test_case_lineage: true
+
+  compliance_requirements:
+    - standard: "SOC2"
+      controls: ["access_logging", "data_retention", "change_management"]
+
+    - standard: "GDPR"
+      controls: ["pii_anonymization", "right_to_deletion", "data_minimization"]
+
+    - standard: "FINRA"
+      controls: ["conversation_archiving", "suitability_documentation", "disclosure_tracking"]
+
+  audit_trail:
+    log_retention_days: 730  # 2 years
+    log_fields:
+      - evaluation_timestamp
+      - prompt_version
+      - model_version
+      - input_hash
+      - output_hash
+      - metrics_computed
+      - policy_violations
+      - human_reviewer_id (if applicable)
+
+
+# ==============================================================================
+# ESCALATION POLICY
+# ==============================================================================
+
+escalation:
+  tier_1_violations:
+    description: "BLOCKING gate failures"
+    notification: "IMMEDIATE"
+    recipients: ["ml-engineering-lead", "security-lead", "compliance-lead"]
+    action_required: "Fix required before deployment proceeds"
+
+  tier_2_violations:
+    description: "HIGH_PRIORITY gate failures"
+    notification: "WITHIN_1_HOUR"
+    recipients: ["ml-engineering"]
+    action_required: "Fix required before next release"
+
+  tier_3_violations:
+    description: "STANDARD gate failures"
+    notification: "DAILY_DIGEST"
+    recipients: ["ml-engineering"]
+    action_required: "Track for improvement"
+
+  production_incidents:
+    - severity: "CRITICAL"
+      examples: ["pii_leakage", "security_breach"]
+      response_time_minutes: 15
+      escalation_chain: ["ml-engineering-lead", "cto", "ciso"]
+
+    - severity: "HIGH"
+      examples: ["accuracy_drop_>10%", "latency_spike_>100%"]
+      response_time_minutes: 60
+      escalation_chain: ["ml-engineering-lead"]
+
+    - severity: "MEDIUM"
+      examples: ["cost_spike", "error_rate_increase"]
+      response_time_hours: 4
+      escalation_chain: ["ml-engineering"]
+
+
+# ==============================================================================
+# CONTINUOUS IMPROVEMENT POLICY
+# ==============================================================================
+
+continuous_improvement:
+  review_cycle: "quarterly"
+
+  metrics_review:
+    - evaluate_policy_effectiveness
+    - adjust_thresholds_based_on_production_data
+    - update_test_datasets
+    - retire_obsolete_tests
+
+  feedback_loop:
+    - collect_human_review_feedback
+    - analyze_production_failures
+    - incorporate_edge_cases_into_test_suite
+    - update_prompt_based_on_insights
+
+  experimentation:
+    - monthly_prompt_optimization_sprint
+    - a_b_test_new_approaches
+    - benchmark_against_new_models
+    - evaluate_cost_optimization_opportunities

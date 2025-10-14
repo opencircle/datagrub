@@ -1,0 +1,76 @@
+# Sample Advisor-Client Conversation: Financial Planning Session
+# Conversation ID: conv_abc123def4567890
+# Date: 2025-10-14
+# Type: Initial Consultation
+# Duration: 45 minutes
+#
+# NOTE: This is a sample transcript for testing prompt evaluation pipelines.
+# User should update this file with real or additional test transcripts.
+
+Advisor: Good morning, Sarah. Thank you for taking the time to meet with me today. I'm excited to learn about your financial goals and see how we can help you achieve them.
+
+Client: Good morning. Yes, I'm looking forward to this. I've been meaning to get serious about my retirement planning.
+
+Advisor: That's great. Let's start with some basics. Can you tell me a bit about yourself? How old are you, and what's your current employment situation?
+
+Client: Sure. I'm 52 years old, and I work as a software engineer at a tech company. I've been there for about 15 years now, making around $135,000 a year.
+
+Advisor: Excellent. And when are you thinking about retirement?
+
+Client: I'd like to retire at 65, so that gives me about 13 years. But honestly, I'm a bit worried I might not have saved enough.
+
+Advisor: We'll definitely look into that. Can you tell me about your current portfolio? What do you have saved for retirement right now?
+
+Client: I have my 401(k) through work, which has about $380,000 in it. I also have a traditional IRA with another $120,000. So that's $500,000 total. I've been contributing the maximum to my 401(k) every year.
+
+Advisor: That's very good - you've been disciplined with your savings. Now, let's talk about your family situation. Are you married? Do you have any children or other dependents?
+
+Client: Yes, I'm married. My spouse works part-time and makes about $45,000 a year. We have two kids - one is 18 and just started college this fall, and the other is 15, so college is coming up for them in a few years too.
+
+Advisor: College expenses are definitely something we need to factor in. Have you started saving for that?
+
+Client: We have about $60,000 in a 529 plan for the younger one. For our eldest, we're planning to use a combination of savings and possibly some student loans. The tuition is about $50,000 a year.
+
+Advisor: I see. So that's a significant expense coming up. Let me ask you about your risk tolerance. How would you describe your comfort level with investment risk?
+
+Client: Well, I'd say I'm pretty conservative. I mean, I know I need growth to reach my retirement goals, but I get nervous when I see the market drop. I can't afford to lose a lot of money with retirement only 13 years away.
+
+Advisor: That's a common concern, and it's important we find a balance. You mentioned you're nervous about market drops - can you tell me more about that? Have you experienced significant losses before?
+
+Client: During the 2008 financial crisis, I saw my 401(k) drop by almost 40%. It was terrifying. I didn't pull out, but I had a really hard time watching it. It took years to recover.
+
+Advisor: I understand. That was a difficult time for many investors. But it sounds like you made the right decision by staying invested. Now, thinking beyond retirement, do you have any other major financial goals? Maybe purchasing a second home, travel plans, helping your children with down payments?
+
+Client: My spouse and I have talked about buying a small vacation home at the beach, maybe in 5 to 7 years. We're thinking something in the $400,000 to $500,000 range. And yes, we'd like to help our kids with down payments when they're ready to buy homes, maybe $30,000 to $50,000 each.
+
+Advisor: Those are wonderful goals. Let's also talk about your current financial situation. Do you have any debt? Mortgage, car loans, credit cards?
+
+Client: We have a mortgage on our primary home with about $280,000 remaining. The monthly payment is $2,100. We should have it paid off in about 18 years. We also have a car loan with about $15,000 left, $450 a month. No credit card debt - we pay those off every month.
+
+Advisor: That's excellent. Do you have an emergency fund set up?
+
+Client: Yes, we keep about $40,000 in a high-yield savings account. That's roughly 6 months of expenses for us.
+
+Advisor: Perfect. That's a solid foundation. Now, let me explain how our firm works and the services we provide. We charge a 1% annual fee on assets under management, which is pretty standard in the industry. We'll create a comprehensive financial plan for you, rebalance your portfolio quarterly, and meet with you at least twice a year to review progress and make any necessary adjustments. Does that sound reasonable?
+
+Client: Yes, that sounds fair. I've heard that's a typical fee structure.
+
+Advisor: Great. Now, I need to make sure you understand the risks involved with investing. Even with a more conservative approach, there will be market fluctuations, and the value of your investments can go down as well as up. There's no guarantee of returns, and past performance doesn't guarantee future results. Are you comfortable with that understanding?
+
+Client: Yes, I understand. I know there's always some risk with investing.
+
+Advisor: Excellent. Based on what you've told me today, I think we can put together a solid plan that balances your need for growth with your desire for capital preservation. I'm going to recommend a diversified portfolio that's about 60% equities and 40% bonds and other fixed income. This should give you growth potential while providing some downside protection.
+
+Client: That sounds good. I like the idea of having that 40% cushion.
+
+Advisor: Perfect. I'll put together a detailed proposal for our next meeting, including specific fund recommendations, projected returns under different scenarios, and how we'll adjust the allocation as you get closer to retirement. We'll also map out a strategy for those college expenses and your other goals.
+
+Client: That sounds great. When should we meet next?
+
+Advisor: How about two weeks from today? That will give me time to prepare everything.
+
+Client: That works for me. Thank you so much for your time today.
+
+Advisor: My pleasure, Sarah. I'm looking forward to working with you to achieve your financial goals. I'll send you a meeting invite and some documents to review before our next session.
+
+Client: Perfect. Thank you.

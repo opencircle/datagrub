@@ -1,0 +1,354 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://datagrub.com/schemas/fact_extraction_output.json",
+  "title": "Fact Extraction Output Schema",
+  "description": "Schema for structured facts extracted from advisor-client conversations",
+  "type": "object",
+  "required": [
+    "conversation_id",
+    "extraction_timestamp",
+    "client_demographics",
+    "financial_goals",
+    "financial_situation",
+    "risk_profile",
+    "compliance_markers"
+  ],
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "Reference to input conversation ID",
+      "pattern": "^conv_[a-zA-Z0-9]{16}$"
+    },
+    "extraction_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of extraction"
+    },
+    "extraction_confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Overall confidence score for extracted facts (0-1)"
+    },
+    "client_demographics": {
+      "type": "object",
+      "required": ["client_age_provided", "employment_status_provided"],
+      "properties": {
+        "client_age": {
+          "type": ["integer", "null"],
+          "minimum": 18,
+          "maximum": 120,
+          "description": "Client age in years"
+        },
+        "client_age_provided": {
+          "type": "boolean",
+          "description": "Whether age was explicitly stated"
+        },
+        "client_name_anonymized": {
+          "type": ["string", "null"],
+          "description": "Anonymized client name (e.g., Client_A)"
+        },
+        "employment_status": {
+          "type": ["string", "null"],
+          "enum": ["employed", "retired", "unemployed", "self_employed", null],
+          "description": "Current employment status"
+        },
+        "employment_status_provided": {
+          "type": "boolean"
+        },
+        "dependents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["age", "relationship"],
+            "properties": {
+              "age": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "relationship": {
+                "type": "string",
+                "enum": ["child", "spouse", "parent", "other"]
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 200
+              }
+            }
+          },
+          "description": "List of dependents mentioned"
+        }
+      }
+    },
+    "financial_goals": {
+      "type": "object",
+      "properties": {
+        "retirement_age": {
+          "type": ["integer", "null"],
+          "minimum": 40,
+          "maximum": 90,
+          "description": "Target retirement age"
+        },
+        "retirement_timeline_years": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 50,
+          "description": "Years until retirement"
+        },
+        "financial_goals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500
+          },
+          "description": "List of specific financial goals mentioned"
+        },
+        "major_expenses_planned": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["description", "timeframe"],
+            "properties": {
+              "description": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "timeframe": {
+                "type": "string",
+                "description": "When this expense is expected (e.g., '2 years', 'next year')"
+              },
+              "estimated_amount": {
+                "type": ["number", "null"],
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    "financial_situation": {
+      "type": "object",
+      "properties": {
+        "current_portfolio_value": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Current investment portfolio value in USD"
+        },
+        "annual_income": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Annual income in USD"
+        },
+        "debt_obligations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type", "amount"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["mortgage", "student_loan", "credit_card", "auto_loan", "personal_loan", "other"]
+              },
+              "amount": {
+                "type": "number",
+                "minimum": 0
+              },
+              "monthly_payment": {
+                "type": ["number", "null"],
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "emergency_fund_months": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 24,
+          "description": "Months of expenses covered by emergency fund"
+        }
+      }
+    },
+    "risk_profile": {
+      "type": "object",
+      "required": ["risk_tolerance"],
+      "properties": {
+        "risk_tolerance": {
+          "type": ["string", "null"],
+          "enum": ["conservative", "moderate", "aggressive", "conflicting", null],
+          "description": "Client's stated risk tolerance"
+        },
+        "risk_tolerance_confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence in risk tolerance classification"
+        },
+        "risk_capacity": {
+          "type": ["string", "null"],
+          "enum": ["low", "medium", "high", null],
+          "description": "Financial capacity to take risk"
+        },
+        "investment_experience": {
+          "type": ["string", "null"],
+          "enum": ["novice", "intermediate", "experienced", null]
+        },
+        "risk_concerns_mentioned": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": "Specific risk concerns client mentioned"
+        }
+      }
+    },
+    "compliance_markers": {
+      "type": "object",
+      "required": ["suitability_factors_discussed", "investment_objectives_documented"],
+      "properties": {
+        "disclosures_made": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "description": "Specific disclosures mentioned by advisor"
+        },
+        "suitability_factors_discussed": {
+          "type": "boolean",
+          "description": "Whether suitability factors were covered"
+        },
+        "investment_objectives_documented": {
+          "type": "boolean",
+          "description": "Whether investment objectives were documented"
+        },
+        "potential_compliance_concerns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "description": "Any potential compliance issues identified"
+        }
+      }
+    },
+    "extraction_metadata": {
+      "type": "object",
+      "properties": {
+        "model_used": {
+          "type": "string",
+          "description": "LLM model used for extraction"
+        },
+        "temperature": {
+          "type": "number"
+        },
+        "tokens_used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "latency_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pii_entities_redacted": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "entity_type": {
+                "type": "string",
+                "enum": ["SSN", "ACCOUNT_NUMBER", "CREDIT_CARD", "ADDRESS", "PHONE"]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "conversation_id": "conv_abc123def4567890",
+      "extraction_timestamp": "2025-10-14T10:35:22Z",
+      "extraction_confidence": 0.94,
+      "client_demographics": {
+        "client_age": 55,
+        "client_age_provided": true,
+        "client_name_anonymized": "Client_A",
+        "employment_status": "employed",
+        "employment_status_provided": true,
+        "dependents": [
+          {
+            "age": 18,
+            "relationship": "child",
+            "notes": "starting college"
+          }
+        ]
+      },
+      "financial_goals": {
+        "retirement_age": 65,
+        "retirement_timeline_years": 10,
+        "financial_goals": [
+          "Retire comfortably at age 65",
+          "Fund college education for child",
+          "Purchase vacation home within 5 years"
+        ],
+        "major_expenses_planned": [
+          {
+            "description": "College tuition for child",
+            "timeframe": "next 4 years",
+            "estimated_amount": 200000
+          }
+        ]
+      },
+      "financial_situation": {
+        "current_portfolio_value": 500000,
+        "annual_income": 120000,
+        "debt_obligations": [
+          {
+            "type": "mortgage",
+            "amount": 250000,
+            "monthly_payment": 1800
+          }
+        ],
+        "emergency_fund_months": 6
+      },
+      "risk_profile": {
+        "risk_tolerance": "moderate",
+        "risk_tolerance_confidence": 0.85,
+        "risk_capacity": "medium",
+        "investment_experience": "intermediate",
+        "risk_concerns_mentioned": [
+          "concerned about market volatility",
+          "wants to preserve capital for retirement"
+        ]
+      },
+      "compliance_markers": {
+        "disclosures_made": [
+          "investment risks explained",
+          "fee structure disclosed"
+        ],
+        "suitability_factors_discussed": true,
+        "investment_objectives_documented": true,
+        "potential_compliance_concerns": []
+      },
+      "extraction_metadata": {
+        "model_used": "claude-sonnet-4-5-20250929",
+        "temperature": 0.25,
+        "tokens_used": 847,
+        "latency_ms": 2341,
+        "pii_entities_redacted": [
+          {
+            "entity_type": "ACCOUNT_NUMBER",
+            "count": 2
+          }
+        ]
+      }
+    }
+  ]
+}

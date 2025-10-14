@@ -1,0 +1,210 @@
+# Prompt Specification: Fact Extraction from Advisor-Client Conversations
+# Version: 1.0
+# Classification: CONVERSATION_ANALYSIS
+# Intent: EXTRACT_STRUCTURED_FACTS
+# Stage: FACT_EXTRACTION
+
+metadata:
+  name: "advisor_conversation_fact_extraction"
+  version: "1.0.0"
+  classification: "conversation_analysis"
+  intent: "extract_structured_facts"
+  stage: "fact_extraction"
+  compliance_critical: true
+  pii_handling: true
+
+  # Success metrics for this prompt
+  success_metrics:
+    accuracy_min: 0.95
+    precision_min: 0.95
+    recall_min: 0.90
+    hallucination_rate_max: 0.02
+    latency_p95_max_ms: 3000
+
+  # Tags for organization and discovery
+  tags:
+    - wealth_management
+    - compliance
+    - structured_extraction
+    - financial_planning
+
+# LLM Configuration
+model_config:
+  provider: "anthropic"
+  model: "claude-sonnet-4-5-20250929"
+  temperature: 0.25  # Low temperature for precision
+  top_p: 0.95
+  max_tokens: 1000
+
+# Input/Output Schema References
+schemas:
+  input: "../schemas/conversation_input.json"
+  output: "../schemas/fact_extraction_output.json"
+
+# Prompt Template
+prompt_template: |
+  You are a financial conversation analyst extracting factual information from advisor-client conversations.
+
+  **CRITICAL INSTRUCTIONS:**
+  1. Extract ONLY facts explicitly stated in the conversation
+  2. Do NOT infer, assume, or hallucinate missing information
+  3. Mark fields as null if information is not provided
+  4. Flag any PII (SSN, account numbers, addresses) as <REDACTED>
+  5. Ensure all numerical values (ages, amounts) are extracted accurately
+
+  **REQUIRED FIELDS TO EXTRACT:**
+
+  Client Demographics:
+  - client_age (integer or null)
+  - client_name (string or null) - will be anonymized
+  - employment_status (string: "employed" | "retired" | "unemployed" | null)
+  - dependents (array of objects with age and relationship, or empty array)
+
+  Financial Goals:
+  - retirement_age (integer or null)
+  - retirement_timeline_years (integer or null)
+  - financial_goals (array of strings, specific goals mentioned)
+  - major_expenses_planned (array of objects with description and timeframe)
+
+  Financial Situation:
+  - current_portfolio_value (float or null) - approximate if range given
+  - annual_income (float or null)
+  - debt_obligations (array of objects with type and amount, or empty array)
+  - emergency_fund_months (integer or null)
+
+  Risk Profile:
+  - risk_tolerance (string: "conservative" | "moderate" | "aggressive" | "conflicting" | null)
+  - risk_capacity (string: "low" | "medium" | "high" | null)
+  - investment_experience (string: "novice" | "intermediate" | "experienced" | null)
+  - risk_concerns_mentioned (array of strings)
+
+  Compliance Markers:
+  - disclosures_made (array of strings - specific disclosures mentioned)
+  - suitability_factors_discussed (boolean)
+  - investment_objectives_documented (boolean)
+
+  **CONVERSATION TO ANALYZE:**
+  {{ transcript }}
+
+  **OUTPUT FORMAT:**
+  Respond with valid JSON matching the exact schema specified. Do not include markdown code blocks or explanations.
+
+# Example Inputs/Outputs for Testing
+examples:
+  - input:
+      transcript: |
+        Advisor: Hi Sarah, thanks for meeting with me today. Can you tell me about your retirement plans?
+        Client: Sure, I'm 52 years old and would like to retire at 65. I'm currently employed making about $120,000 per year.
+        Advisor: Great. What's your current investment portfolio value?
+        Client: I have about $450,000 saved up. I'm pretty conservative when it comes to risk - I can't afford to lose money.
+        Advisor: I understand. Do you have any dependents?
+        Client: Yes, I have two kids - one is 18 starting college, the other is 15.
+    expected_output:
+      client_age: 52
+      client_name: "Sarah"
+      employment_status: "employed"
+      dependents:
+        - age: 18
+          relationship: "child"
+          notes: "starting college"
+        - age: 15
+          relationship: "child"
+      retirement_age: 65
+      retirement_timeline_years: 13
+      financial_goals:
+        - "Retire at age 65"
+        - "Fund college education for children"
+      current_portfolio_value: 450000.0
+      annual_income: 120000.0
+      risk_tolerance: "conservative"
+      risk_concerns_mentioned:
+        - "can't afford to lose money"
+
+# Validation Rules (Guardrails)
+guardrails:
+  input_validation:
+    - rule: "transcript_not_empty"
+      description: "Transcript must contain at least 50 characters"
+      type: "length"
+      params:
+        min_length: 50
+
+    - rule: "transcript_format"
+      description: "Transcript must follow Advisor/Client format"
+      type: "regex"
+      params:
+        pattern: "(Advisor:|Client:)"
+
+  output_validation:
+    - rule: "valid_json_schema"
+      description: "Output must match fact_extraction_output.json schema"
+      type: "json_schema"
+      params:
+        schema_ref: "../schemas/fact_extraction_output.json"
+
+    - rule: "no_pii_leakage"
+      description: "SSN, account numbers must be redacted"
+      type: "pii_detection"
+      params:
+        entities: ["SSN", "ACCOUNT_NUMBER", "CREDIT_CARD"]
+        action: "redact"
+
+    - rule: "age_range_validation"
+      description: "Ages must be realistic (18-120)"
+      type: "range"
+      params:
+        field: "client_age"
+        min: 18
+        max: 120
+
+    - rule: "no_hallucination"
+      description: "All extracted facts must be grounded in transcript"
+      type: "faithfulness"
+      params:
+        context_field: "transcript"
+
+# Evaluation Metrics (DeepEval)
+evaluations:
+  - metric: "faithfulness"
+    library: "deepeval"
+    threshold: 0.95
+    description: "Ensures all extracted facts are present in conversation"
+
+  - metric: "answer_relevancy"
+    library: "deepeval"
+    threshold: 0.90
+    description: "Validates extraction completeness"
+
+  - metric: "json_correctness"
+    library: "deepeval"
+    threshold: 1.0
+    description: "Output must be valid JSON"
+
+  - metric: "pii_detection"
+    library: "presidio"
+    threshold: 1.0
+    description: "No PII leakage in output"
+
+# Regression Prevention
+regression_tests:
+  - name: "golden_retirement_planning"
+    dataset: "golden"
+    min_accuracy: 0.98
+
+  - name: "edge_incomplete_conversation"
+    dataset: "edge"
+    min_accuracy: 0.85
+
+  - name: "adversarial_prompt_injection"
+    dataset: "adversarial"
+    min_accuracy: 1.0
+
+# Change Log
+changelog:
+  - version: "1.0.0"
+    date: "2025-10-14"
+    changes:
+      - "Initial prompt specification"
+      - "Added comprehensive schema validation"
+      - "Integrated Presidio PII detection"
+      - "Defined success metrics and guardrails"

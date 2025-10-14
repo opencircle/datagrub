@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://datagrub.com/schemas/conversation_input.json",
+  "title": "Conversation Input Schema",
+  "description": "Schema for advisor-client conversation input to fact extraction pipeline",
+  "type": "object",
+  "required": ["transcript", "conversation_id"],
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "Unique identifier for the conversation",
+      "pattern": "^conv_[a-zA-Z0-9]{16}$",
+      "examples": ["conv_abc123def4567890"]
+    },
+    "transcript": {
+      "type": "string",
+      "description": "Full conversation transcript with speaker labels",
+      "minLength": 50,
+      "maxLength": 50000
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional metadata about the conversation",
+      "properties": {
+        "conversation_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 formatted conversation timestamp"
+        },
+        "advisor_id": {
+          "type": "string",
+          "description": "Anonymized advisor identifier"
+        },
+        "client_id": {
+          "type": "string",
+          "description": "Anonymized client identifier"
+        },
+        "conversation_type": {
+          "type": "string",
+          "enum": [
+            "initial_consultation",
+            "portfolio_review",
+            "financial_planning",
+            "compliance_review",
+            "investment_recommendation"
+          ]
+        },
+        "duration_minutes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["phone", "video", "in_person"]
+        }
+      }
+    },
+    "preprocessing": {
+      "type": "object",
+      "description": "Preprocessing flags and configurations",
+      "properties": {
+        "pii_anonymization_required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to anonymize PII in the transcript before processing"
+        },
+        "language": {
+          "type": "string",
+          "default": "en",
+          "description": "ISO 639-1 language code"
+        },
+        "quality_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Transcript quality score from speech recognition (0-1)"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "conversation_id": "conv_abc123def4567890",
+      "transcript": "Advisor: Good morning, thank you for meeting with me today. Can you tell me about your financial goals?\nClient: Hi, yes. I'm looking to retire in about 10 years, so at age 65. I want to make sure I have enough saved up.\nAdvisor: That's a great goal. What's your current portfolio value?\nClient: I have about $500,000 across my 401k and IRA accounts.",
+      "metadata": {
+        "conversation_date": "2025-10-14T10:30:00Z",
+        "advisor_id": "adv_xyz789",
+        "client_id": "cli_abc456",
+        "conversation_type": "financial_planning",
+        "duration_minutes": 45,
+        "channel": "video"
+      },
+      "preprocessing": {
+        "pii_anonymization_required": true,
+        "language": "en",
+        "quality_score": 0.92
+      }
+    }
+  ]
+}

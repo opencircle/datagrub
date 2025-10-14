@@ -1495,8 +1495,9 @@ client.create_dataset_from_runs(
 ```yaml
 # Recommended tooling
 evaluation:
-  primary: promptfoo  # CLI + CI/CD
-  secondary: langsmith  # Production tracing
+  primary: deepeval  # Comprehensive LLM evaluation framework
+  guardrails: guardrails-ai  # Runtime validation and safety guardrails
+  privacy: presidio  # PII detection and deidentification
 
 testing:
   golden_dataset_size: 100-200 conversations
@@ -1511,6 +1512,7 @@ ci_cd:
     - adversarial_pass_rate: 1.0
     - max_latency_p95_ms: 5000
     - max_cost_per_eval: 0.10
+    - pii_detection_pass_rate: 1.0
 
 monitoring:
   production_sampling: 0.10  # 10% of conversations
@@ -1519,7 +1521,31 @@ monitoring:
     - accuracy_drop_pct: 5
     - latency_increase_pct: 50
     - error_rate_above: 0.01
+    - pii_leakage_detected: true
 ```
+
+**Stack Components:**
+
+1. **DeepEval** - Primary evaluation framework
+   - Golden dataset validation
+   - Edge case and adversarial testing
+   - Metrics: Faithfulness, Answer Relevancy, Contextual Precision
+   - Custom metrics for wealth management compliance
+   - Integrated with pytest for CI/CD pipelines
+
+2. **Guardrails AI** - Runtime safety and validation
+   - Input/output schema validation
+   - Content safety checks (PII, toxicity, bias)
+   - Structured output enforcement (JSON schema)
+   - Custom validators for compliance requirements
+   - Policy-based evaluation with YAML configuration
+
+3. **Presidio** - Privacy and PII protection
+   - Real-time PII detection (SSN, account numbers, names, addresses)
+   - Automated anonymization/pseudonymization
+   - Custom entity recognition for financial data
+   - GDPR/HIPAA/CCPA compliance support
+   - Integration with evaluation pipeline for safety validation
 
 ---
 
