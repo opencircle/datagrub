@@ -733,21 +733,262 @@ Modern LLM applications require:
 
 Traditional manual testing is insufficient for production-grade prompt engineering.
 
-### 3.2 Evaluation Framework Options
+### 3.2 Evaluation Library Ecosystem
 
-Based on the datagrub project context, five evaluation library options are available:
+The PromptForge platform integrates **93 evaluation metrics** across **6 specialized adapters**, providing comprehensive LLM evaluation capabilities for production systems.
 
-1. **OpenAI Evals** - Standardized evaluation framework from OpenAI
-2. **LangChain Evaluators** - Built-in evaluation tools with LangSmith integration
-3. **PromptFoo** - Open-source LLM testing framework with CLI and CI/CD support
-4. **DeepEval** - Python library for LLM evaluation with custom metrics
-5. **TruLens** - Feedback-driven evaluation with production monitoring
+**Evaluation Distribution:**
+- **Total Active Evaluations:** 93
+- **Vendor-Sourced:** 87 evaluations
+- **Platform-Native:** 6 PromptForge evaluations
 
-**Recommended Choice for Wealth Management:** **PromptFoo** or **LangSmith**
+**By Category:**
+- Quality: 71 evaluations (76%)
+- Performance: 11 evaluations (12%)
+- Safety: 7 evaluations (8%)
+- Security: 2 evaluations (2%)
+- Bias: 2 evaluations (2%)
 
-**Rationale:**
-- PromptFoo: Best CLI/CI integration, declarative config, multi-provider support
-- LangSmith: Best for LangChain-based apps, production tracing, dataset management
+**By Type:**
+- Metric (0.0-1.0 scores): 74 evaluations (80%)
+- Classifier (categorization): 12 evaluations (13%)
+- Validator (pass/fail): 7 evaluations (8%)
+
+---
+
+#### Available Evaluation Libraries
+
+##### 1. **Ragas** (23 evaluations) - Most Comprehensive
+
+**Focus:** RAG systems, NLP metrics, and agent evaluations
+
+**Coverage by Category:**
+- Quality: 18 METRIC + 3 VALIDATOR
+- Performance: 2 METRIC
+
+**Key Evaluations:**
+- **Context Precision** (Quality/Metric) - Measures precision of retrieved context relevant to query
+- **Context Recall** (Quality/Metric) - Evaluates recall of retrieved context
+- **Faithfulness** (Quality/Metric) - Evaluates factual consistency between response and context
+- **Response Relevancy** (Quality/Metric) - Measures relevancy of generated response to query
+- **Agent Goal Accuracy** (Performance/Metric) - Evaluates if agent achieves stated goals
+- **Tool Call Accuracy** (Performance/Metric) - Measures accuracy of tool calls made by agent
+
+**Adapter:** `RagasAdapter`
+
+**Best For:** RAG applications, Q&A systems, agent workflows, document retrieval pipelines
+
+---
+
+##### 2. **MLflow** (18 evaluations)
+
+**Focus:** General-purpose ML evaluation metrics and readability assessment
+
+**Coverage by Category:**
+- Quality: 14 METRIC + 1 VALIDATOR
+- Performance: 2 METRIC
+- Safety: 1 METRIC
+
+**Key Evaluations:**
+- **Answer Correctness** (Quality/Metric) - Evaluates semantic correctness of generated answers
+- **Faithfulness** (Quality/Metric) - Checks if answer is faithful to provided context
+- **ROUGE-L** (Quality/Metric) - Longest common subsequence between generated and reference text
+- **Token Count** (Performance/Metric) - Counts number of tokens in generated text
+- **Latency** (Performance/Metric) - Measures response time for generation
+- **Toxicity Score** (Safety/Metric) - Measures toxicity level using Perspective API
+
+**Adapter:** `MLflowAdapter`
+
+**Best For:** Production monitoring, cost tracking, readability assessment, performance benchmarking
+
+---
+
+##### 3. **Arize Phoenix** (16 evaluations)
+
+**Focus:** LLM observability, agent evaluation, and specialized use cases
+
+**Coverage by Category:**
+- Quality: 9 METRIC + 1 VALIDATOR + 2 CLASSIFIER
+- Performance: 2 METRIC
+- Safety: 1 METRIC + 1 CLASSIFIER
+
+**Key Evaluations:**
+- **Q&A on Retrieved Data** (Quality/Metric) - Evaluates quality of Q&A based on retrieved context
+- **Code Generation Evaluation** (Quality/Metric) - Evaluates quality and correctness of generated code
+- **SQL Generation Evaluation** (Quality/Metric) - Evaluates correctness of generated SQL queries
+- **Summarization Evaluation** (Quality/Metric) - Evaluates quality of text summarization
+- **Agent Function Calling** (Performance/Metric) - Evaluates correctness of agent function/tool calling
+- **Hallucination Detection** (Safety/Classifier) - Detects hallucinations in LLM outputs
+
+**Adapter:** `ArizePhoenixAdapter`
+
+**Best For:** Agent systems, code generation, SQL generation, summarization tasks, production observability
+
+---
+
+##### 4. **Deepchecks** (15 evaluations)
+
+**Focus:** Data validation and model monitoring
+
+**Coverage by Category:**
+- Quality: 10 METRIC + 1 CLASSIFIER
+- Security: 1 CLASSIFIER
+- Safety: 2 CLASSIFIER
+- Bias: 1 CLASSIFIER
+
+**Key Evaluations:**
+- **Semantic Similarity** (Quality/Metric) - Measures semantic similarity using embeddings
+- **Fluency** (Quality/Metric) - Evaluates how well-formed and grammatically correct text is
+- **Coherence** (Quality/Metric) - Measures logical flow and coherence of generated text
+- **Grounded in Context** (Quality/Metric) - Checks if answer is grounded in provided context
+- **PII Leakage** (Security/Classifier) - Detects personally identifiable information in outputs
+- **Hallucination Detection** (Safety/Classifier) - Detects hallucinated or fabricated information
+
+**Adapter:** `DeepchecksAdapter`
+
+**Best For:** Data quality validation, compliance monitoring, PII detection, hallucination prevention
+
+---
+
+##### 5. **DeepEval** (15 evaluations)
+
+**Focus:** RAG, agents, chatbots, and safety metrics
+
+**Coverage by Category:**
+- Quality: 9 METRIC
+- Performance: 2 METRIC
+- Security: 1 CLASSIFIER
+- Safety: 2 CLASSIFIER
+- Bias: 1 CLASSIFIER
+
+**Key Evaluations:**
+- **Faithfulness** (Quality/Metric) - Measures if generated answer is factually consistent with context
+- **Answer Relevancy** (Quality/Metric) - Evaluates if generated answer is relevant to user query
+- **Contextual Precision** (Quality/Metric) - Measures if retrieved context is precise and focused
+- **Conversation Completeness** (Quality/Metric) - Evaluates if conversation satisfies user needs
+- **Task Completion** (Performance/Metric) - Assesses if agent successfully completed task
+- **Bias Detection** (Bias/Classifier) - Identifies potential biases in LLM outputs
+
+**Adapter:** `DeepEvalAdapter`
+
+**Best For:** RAG systems, conversational AI, agent task completion, safety and bias detection
+
+---
+
+##### 6. **PromptForge** (6 evaluations) - Platform Native
+
+**Focus:** Platform-specific quality and performance metrics
+
+**Coverage by Category:**
+- Quality: 3 METRIC + 1 VALIDATOR
+- Performance: 2 METRIC + 1 VALIDATOR
+
+**Key Evaluations:**
+- **Prompt Quality Score** (Quality/Metric) - Comprehensive quality assessment of prompt engineering
+- **Response Completeness** (Quality/Metric) - Checks if response fully addresses all input aspects
+- **Cost Efficiency Score** (Performance/Metric) - Evaluates cost-effectiveness vs. target benchmarks
+- **Token Efficiency Score** (Performance/Metric) - Measures efficient token usage relative to output value
+- **Latency Budget Validator** (Performance/Validator) - Validates response latency within SLA bounds
+- **Output Consistency Checker** (Quality/Validator) - Validates output format matches expected structure
+
+**Adapter:** `PromptForgeAdapter`
+
+**Best For:** Platform monitoring, cost optimization, SLA compliance, prompt engineering quality
+
+---
+
+#### Recommended Evaluations by Category & Type
+
+##### Quality / Metric (Primary Use Case)
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Faithfulness** | Ragas, MLflow, DeepEval | RAG, Q&A systems | **Most critical for compliance**: Ensures generated content is factually consistent with source material. Essential for regulated industries (finance, healthcare, legal) where hallucinations pose liability risks. Prevents model from fabricating facts not present in retrieved context. |
+| **Answer Correctness** | MLflow | General Q&A, customer support | **Gold standard for accuracy**: Evaluates semantic correctness against ground truth answers. Useful for customer support automation where answer accuracy directly impacts user satisfaction and trust. |
+| **Semantic Similarity** | Deepchecks, Ragas | Content comparison, paraphrasing | **Nuanced quality measurement**: Uses embeddings to capture meaning beyond word overlap. Critical for evaluating paraphrasing quality, content rewriting, and translation where surface-level metrics fail. |
+| **Summarization Score** | Ragas | Document summarization, meeting notes | **End-to-end summarization quality**: Comprehensive evaluation of summary quality including relevance, conciseness, and coherence. Essential for wealth management call summaries, legal document condensation. |
+
+##### Quality / Validator
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Exact Match** | MLflow, Ragas | Structured data extraction, classification | **Binary verification**: Confirms prediction exactly matches expected output. Critical for regulatory compliance checks, data extraction validation, and quality gates where approximate matches are insufficient. |
+| **Output Consistency Checker** | PromptForge | API responses, structured output | **Format compliance**: Ensures JSON/structured outputs match expected schema. Prevents downstream parsing errors and system failures. Essential for production APIs serving applications that expect consistent formats. |
+
+##### Quality / Classifier
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Avoided Answer Detection** | Deepchecks | Customer service, Q&A | **Evasion detection**: Identifies when model sidesteps questions instead of answering. Critical for customer service where evasive responses damage trust. Helps identify gaps in knowledge base or prompt engineering issues. |
+| **User Frustration Detection** | Arize Phoenix | Conversational AI, support bots | **Proactive intervention**: Detects signs of user frustration enabling escalation to human agents. Improves customer experience and prevents churn in automated support scenarios. |
+
+##### Performance / Metric
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Latency** | MLflow | Production systems, real-time apps | **SLA compliance monitoring**: Tracks response time for user-facing systems. Critical for maintaining service level agreements and user experience standards. Identifies performance degradation before it impacts users. |
+| **Token Efficiency Score** | PromptForge | Cost optimization | **ROI optimization**: Measures tokens used relative to output value. Essential for controlling LLM costs in high-volume applications. Identifies verbose prompts draining budget without quality improvement. |
+| **Agent Goal Accuracy** | Ragas | AI agents, workflow automation | **Task success measurement**: Evaluates if agent achieves intended objectives. Critical for workflow automation where partial task completion creates downstream issues. Validates agent reliability before production deployment. |
+
+##### Performance / Validator
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Latency Budget Validator** | PromptForge | Real-time systems, user interfaces | **Hard SLA enforcement**: Binary pass/fail on latency thresholds. Prevents slow responses from degrading user experience. Creates quality gates in CI/CD pipelines ensuring only performant prompts reach production. |
+
+##### Safety / Metric
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Toxicity Score** | MLflow, Arize Phoenix | User-generated content, public-facing bots | **Brand protection**: Quantifies toxicity level using Perspective API. Essential for public-facing chatbots where toxic outputs damage brand reputation. Enables filtering and escalation workflows. |
+
+##### Safety / Classifier
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Hallucination Detection** | DeepEval, Deepchecks, Arize Phoenix | All production LLM systems | **Factual reliability gatekeeper**: Identifies when model fabricates information not grounded in context. Critical for knowledge work, customer support, and compliance applications. Prevents misinformation and liability risks. |
+| **Toxicity Detection** | DeepEval, Deepchecks | Content moderation, chatbots | **Content safety enforcement**: Binary classifier for toxic/harmful content. Required for user-facing applications to maintain community standards and legal compliance. |
+
+##### Security / Classifier
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **PII Leakage Detection** | DeepEval, Deepchecks | All systems handling personal data | **Compliance requirement**: Detects personally identifiable information in outputs. Mandatory for GDPR/HIPAA/CCPA compliance. Prevents legal liability from accidental PII exposure in model responses. |
+
+##### Bias / Classifier
+
+| Evaluation | Library | Use Case | Why It's Useful |
+|------------|---------|----------|-----------------|
+| **Bias Detection** | DeepEval, Deepchecks | HR systems, content generation | **Fairness safeguard**: Identifies biased content in model outputs. Critical for HR applications (resume screening, job descriptions), lending decisions, and content creation. Mitigates discrimination risks and ensures ethical AI deployment. |
+
+---
+
+#### Selection Guidelines for Wealth Management
+
+**For Conversation Analysis (Primary Use Case):**
+1. **Faithfulness** (Ragas) - Ensure advisor insights grounded in actual conversation
+2. **Answer Correctness** (MLflow) - Validate fact extraction accuracy
+3. **Hallucination Detection** (Deepchecks) - Prevent fabrication in compliance summaries
+4. **PII Leakage Detection** (DeepEval) - Protect client financial information
+5. **Latency Budget Validator** (PromptForge) - Maintain real-time analysis SLA
+
+**For Agent/Workflow Systems:**
+1. **Agent Goal Accuracy** (Ragas) - Validate workflow completion
+2. **Tool Call Accuracy** (Ragas) - Ensure correct API/function usage
+3. **Task Completion** (DeepEval) - Verify end-to-end success
+
+**For Production Monitoring:**
+1. **Token Efficiency Score** (PromptForge) - Control costs
+2. **Latency** (MLflow) - Track performance trends
+3. **Toxicity Score** (MLflow) - Monitor output safety
+
+---
+
+**Recommended Evaluation Stack:**
+- **Primary:** Ragas (comprehensive RAG/NLP coverage)
+- **Secondary:** PromptForge (platform-native monitoring)
+- **Compliance:** Deepchecks (PII, hallucination, bias detection)
+- **Performance:** MLflow (latency, cost, token tracking)
 
 ### 3.3 Evaluation Types and Metrics
 
