@@ -83,7 +83,61 @@ Each dependency serves a specific purpose in the evaluation pipeline:
 - **Security Evaluators**: Focus on `presidio-analyzer`, `presidio-anonymizer`, and `guardrails-ai` for safety validation
 
 
-### 2. Run Validation Pipeline
+### 2. Run Tests with Enhanced Reporting (Recommended)
+
+```bash
+# Run all tests with structured reporting
+python scripts/run_tests.py
+
+# Run specific test suite
+python scripts/run_tests.py --suite golden      # Core functionality
+python scripts/run_tests.py --suite edge        # Boundary conditions
+python scripts/run_tests.py --suite adversarial # Security tests
+python scripts/run_tests.py --suite guardrails  # Validation framework
+
+# Verbose output with individual test results
+python scripts/run_tests.py --verbose
+```
+
+**Enhanced Test Runner Features:**
+- 📊 **Structured Reporting**: Clear categorization of test types with explanations
+- ✅ **Visual Pass/Fail**: Color-coded results with ✓ and ✗ indicators
+- 📈 **Category Statistics**: Pass rates by test category (Golden, Edge, Adversarial, etc.)
+- ⏱️ **Performance Metrics**: Execution time and API usage estimates
+- 🎯 **Deployment Status**: Clear indication if system is production-ready
+
+**Example Output:**
+```
+================================================================================
+                          PROMPT EVALUATION TEST SUITE
+================================================================================
+
+🎯 GUARDRAILS VALIDATION TESTS (17 tests)
+  Validates Guardrails AI framework with Pydantic models, PII detection, and business logic
+    • Schema validation (age ranges, enums, required fields)
+    • PII detection with Presidio (SSN, phone, email)
+    • Business logic (retirement age, timeline consistency)
+
+🌟 GOLDEN DATASET TESTS (3 tests)
+  Core functionality validation on known-good examples (Target: ≥95% accuracy)
+    • Retirement planning extraction
+    • Risk tolerance classification
+
+...
+
+TEST RESULTS BY CATEGORY
+
+✓ GUARDRAILS: 17/17 tests passed (100.0%)
+✓ GOLDEN: 3/3 tests passed (100.0%)
+✓ EDGE: 5/5 tests passed (100.0%)
+✓ ADVERSARIAL: 7/7 tests passed (100.0%)
+
+================================================================================
+                   ✓ ALL TESTS PASSED - READY FOR DEPLOYMENT
+================================================================================
+```
+
+### 3. Run Validation Pipeline
 
 ```bash
 # Run complete validation (all tests)
@@ -101,7 +155,7 @@ python scripts/validate_prompts.py --policy-check-only
 python scripts/validate_prompts.py -v
 ```
 
-### 3. Run Tests Directly
+### 5. Run Tests Directly with pytest
 
 ```bash
 # Run all DeepEval tests
@@ -114,7 +168,7 @@ pytest tests/test_fact_extraction.py -v -k "adversarial"
 pytest tests/test_fact_extraction.py -v -k "policy"
 ```
 
-### 4. Test Guardrails Integration
+### 6. Test Guardrails Integration
 
 ```bash
 # Run Guardrails example
