@@ -5,8 +5,6 @@
   "description": "Schema for structured facts extracted from advisor-client conversations",
   "type": "object",
   "required": [
-    "conversation_id",
-    "extraction_timestamp",
     "client_demographics",
     "financial_goals",
     "financial_situation",
@@ -32,7 +30,6 @@
     },
     "client_demographics": {
       "type": "object",
-      "required": ["client_age_provided", "employment_status_provided"],
       "properties": {
         "client_age": {
           "type": ["integer", "null"],

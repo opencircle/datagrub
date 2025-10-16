@@ -68,6 +68,16 @@ class FactExtractionEvaluator:
 
         output_text = response.content[0].text
 
+        # Strip markdown code blocks if present
+        if output_text.strip().startswith("```"):
+            # Remove opening ```json or ``` and closing ```
+            lines = output_text.strip().split('\n')
+            if lines[0].startswith("```"):
+                lines = lines[1:]  # Remove first line with ```
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]  # Remove last line with ```
+            output_text = '\n'.join(lines)
+
         # Parse JSON response
         try:
             result = json.loads(output_text)
