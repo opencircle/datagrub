@@ -60,6 +60,27 @@ pip install \
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
+#### Why These Dependencies?
+
+Each dependency serves a specific purpose in the evaluation pipeline:
+
+| Dependency | Purpose | Used For |
+|------------|---------|----------|
+| **anthropic** | Official Anthropic Python SDK | Making API calls to Claude models for prompt execution and testing |
+| **deepeval** | LLM evaluation framework | Running comprehensive evaluation metrics (faithfulness, answer relevancy, hallucination detection) across golden/edge/adversarial test suites |
+| **guardrails-ai** | Runtime validation framework | Enforcing schema validation, business logic rules, and safety constraints on LLM outputs before production use |
+| **presidio-analyzer** | Microsoft's PII detection engine | Identifying sensitive information (SSN, credit cards, account numbers) in both inputs and outputs to prevent data leakage |
+| **presidio-anonymizer** | PII redaction tool | Automatically redacting or masking detected PII entities for safe logging and debugging |
+| **pytest** | Python testing framework | Organizing and running test suites, generating reports, and integrating with CI/CD pipelines |
+| **jsonschema** | JSON schema validator | Validating that LLM outputs conform to expected data structures defined in `schemas/` directory |
+| **pyyaml** | YAML parser | Reading prompt specifications, evaluation policies, and configuration files |
+
+**For New Team Members:**
+- **Developers**: Focus on `anthropic`, `pytest`, `jsonschema` for building and testing prompts
+- **Analysts**: Focus on `deepeval` for evaluation metrics and `pyyaml` for policy configuration
+- **Security Evaluators**: Focus on `presidio-analyzer`, `presidio-anonymizer`, and `guardrails-ai` for safety validation
+
+
 ### 2. Run Validation Pipeline
 
 ```bash
