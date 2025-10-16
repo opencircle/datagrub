@@ -460,160 +460,660 @@ logic: |
 
 ### 3.5 Multi-Framework Evaluation Layer
 
-**Purpose:** Execute evaluations from Phoenix, Ragas, and MLflow to assess response quality
+**Purpose:** Execute quality evaluations to assess LLM response accuracy and prevent "confidently wrong" outputs
 
-**Evaluation Strategy:** Parallel execution with aggregated scoring
+**Evolution Strategy:** Phased rollout from single-framework (DeepEval) to multi-framework validation
 
-#### 3.5.1 Phoenix Evaluations
+---
 
-**Framework:** Arize Phoenix (16 evaluations available)
+#### 3.5.1 Phase 1: DeepEval (CURRENT - IMPLEMENTED ✅)
 
-**Selected Evaluations for Wealth Management:**
+**Status:** Production-ready, fully integrated in `tests/test_fact_extraction.py`
 
-1. **Q&A on Retrieved Data (Metric):**
-   - Evaluates quality of answers based on retrieved conversation context
-   - Measures: relevance, completeness, accuracy
-   - Threshold: ≥ 0.85
+**Framework:** DeepEval 1.2.0 with OpenAI GPT-4 for metric computation
 
-2. **Hallucination Detection (Classifier):**
-   - Detects fabricated information not grounded in transcript
-   - Binary: PASS/FAIL
-   - Threshold: 100% (blocking)
-
-3. **Summarization Evaluation (Metric):**
-   - Evaluates quality of compliance summaries
-   - Measures: conciseness, coherence, coverage
-   - Threshold: ≥ 0.80
-
-**Execution:**
-```
-Phoenix Adapter
-  ├─ Input: LLM response JSON + original transcript
-  ├─ Execution: Parallel async calls to Phoenix API
-  └─ Output:
-      {
-        "qa_quality": 0.89,
-        "hallucination_detected": false,
-        "summarization_score": 0.83
-      }
-```
-
-#### 3.5.2 Ragas Evaluations
-
-**Framework:** Ragas (23 evaluations available - most comprehensive)
-
-**Selected Evaluations for Wealth Management:**
+**Current Metrics (4 total):**
 
 1. **Faithfulness (Metric):**
    - Measures factual consistency between response and source transcript
+   - Implementation: `FaithfulnessMetric(threshold=0.95)`
    - Critical for compliance: ensures no fabricated facts
+   - Current performance: 18/18 tests passing (100%)
    - Threshold: ≥ 0.95
+
+2. **Bias Detection (Metric):**
+   - Detects biased language in outputs
+   - Implementation: `BiasMetric(threshold=0.9)`
+   - Ensures fair, unbiased financial advice representation
+   - Threshold: ≥ 0.90
+
+3. **Answer Relevancy (Metric):**
+   - Validates extraction completeness and relevance
+   - Implementation: `AnswerRelevancyMetric()`
+   - Prevents tangential or off-topic extraction
+
+4. **Contextual Precision (Metric):**
+   - Ensures only relevant facts extracted
+   - Implementation: `ContextualPrecisionMetric()`
+   - Prevents over-extraction or hallucination
+
+**Current Integration Pattern:**
+```python
+# tests/test_fact_extraction.py (lines 1-200)
+from deepeval import assert_test
+from deepeval.metrics import FaithfulnessMetric, BiasMetric
+from deepeval.test_case import LLMTestCase
+
+test_case = LLMTestCase(
+    input=transcript,
+    actual_output=json.dumps(result),
+    retrieval_context=[transcript]
+)
+
+faithfulness_metric = FaithfulnessMetric(threshold=0.95)
+bias_metric = BiasMetric(threshold=0.9)
+
+assert_test(test_case, [faithfulness_metric, bias_metric])
+```
+
+**Execution:**
+```
+DeepEval Adapter (Current)
+  ├─ Input: LLM response JSON + original transcript
+  ├─ Execution: Sync calls to OpenAI GPT-4 for metric evaluation
+  ├─ Latency: ~2-3s per metric (sequential execution)
+  └─ Output:
+      {
+        "faithfulness": 0.96,
+        "bias": 0.94,
+        "answer_relevancy": 0.91,
+        "contextual_precision": 0.89
+      }
+```
+
+**Current Test Coverage:**
+- Golden dataset: 3 tests (retirement, risk tolerance, financial goals)
+- Edge cases: 5 tests (incomplete, ambiguous, multiple clients, long conversations, missing info)
+- Adversarial: 7 tests (prompt injection, PII handling, unethical advice, format manipulation, extreme values, bias)
+- Policy compliance: 2 tests (factors documented, quality metrics met)
+- Regression: 1 test (golden dataset baseline)
+- **Total: 18 tests, 100% pass rate** ✅
+
+**Limitations:**
+- Single framework dependency (no redundancy)
+- No context recall/precision differentiation
+- No hallucination-specific detector
+- Sequential execution (performance overhead)
+- External OpenAI API dependency for evaluation
+
+**Cost:** ~$0.02 per evaluation (4 metrics × $0.005)
+
+---
+
+#### 3.5.2 Phase 2: Ragas Integration (RECOMMENDED NEXT 🎯)
+
+**Status:** Proposed - High priority for implementation
+
+**Framework:** Ragas (23 evaluations available - most comprehensive)
+
+**Why Ragas Next:**
+1. **Most comprehensive evaluation library** (23 metrics vs Phoenix's 16)
+2. **Pure Python implementation** (no external platform dependency like Phoenix/Arize)
+3. **Specialized in RAG/context-aware metrics** (Context Precision, Context Recall)
+4. **Overlaps with DeepEval** on Faithfulness (redundancy = confidence)
+5. **Lower operational complexity** than MLflow (no server) or Phoenix (no Arize account)
+
+**Selected Metrics for Integration (4 primary):**
+
+1. **Faithfulness (Metric):**
+   - Redundant check with DeepEval (increases confidence in factual grounding)
+   - Threshold: ≥ 0.95
+   - Weight in aggregation: 30%
 
 2. **Context Precision (Metric):**
    - Measures precision of extracted facts relative to full context
    - Prevents over-extraction or hallucination
    - Threshold: ≥ 0.90
+   - Weight in aggregation: 15%
 
 3. **Context Recall (Metric):**
    - Measures recall of important facts from transcript
-   - Ensures completeness of extraction
+   - Ensures completeness of extraction (DeepEval doesn't have this)
    - Threshold: ≥ 0.85
+   - Weight in aggregation: 10%
 
 4. **Response Relevancy (Metric):**
    - Measures relevancy of extracted facts to original request
-   - Prevents tangential or off-topic extraction
+   - Similar to DeepEval's AnswerRelevancy but different algorithm
    - Threshold: ≥ 0.90
+   - Weight in aggregation: 5%
 
-**Execution:**
-```
-Ragas Adapter
-  ├─ Input:
-  │   {
-  │     "question": "Extract financial facts from this conversation",
-  │     "answer": "<LLM response JSON>",
-  │     "contexts": ["<original transcript>"],
-  │     "ground_truth": "<optional golden dataset reference>"
-  │   }
-  ├─ Execution: Ragas.evaluate() with selected metrics
-  └─ Output:
-      {
-        "faithfulness": 0.96,
-        "context_precision": 0.91,
-        "context_recall": 0.87,
-        "response_relevancy": 0.93
-      }
-```
+**Proposed Integration Pattern:**
+```python
+# evaluation_adapters/ragas_adapter.py (to be created)
+from ragas import evaluate
+from ragas.metrics import faithfulness, context_precision, context_recall, answer_relevancy
 
-#### 3.5.3 MLflow Evaluations
+async def evaluate_with_ragas(llm_output, transcript, timeout=5):
+    dataset = {
+        "question": ["Extract financial facts from this conversation"],
+        "answer": [llm_output],
+        "contexts": [[transcript]],
+    }
 
-**Framework:** MLflow (18 evaluations available)
+    result = await asyncio.wait_for(
+        evaluate(dataset, metrics=[
+            faithfulness,
+            context_precision,
+            context_recall,
+            answer_relevancy
+        ]),
+        timeout=timeout
+    )
 
-**Selected Evaluations for Wealth Management:**
-
-1. **Answer Correctness (Metric):**
-   - Evaluates semantic correctness against ground truth
-   - Uses for regression testing with golden dataset
-   - Threshold: ≥ 0.95
-
-2. **Token Count (Performance):**
-   - Counts tokens in generated response
-   - Tracks cost efficiency
-   - Alert threshold: > 1500 tokens
-
-3. **Latency (Performance):**
-   - Measures end-to-end response time
-   - SLA monitoring
-   - Alert threshold: > 5000ms
-
-4. **Toxicity Score (Safety):**
-   - Measures toxicity using Perspective API
-   - Brand protection for client-facing outputs
-   - Threshold: < 0.1 (low toxicity)
-
-**Execution:**
-```
-MLflow Adapter
-  ├─ Input: LLM response + ground truth (optional)
-  ├─ Execution: mlflow.evaluate() with custom metrics
-  └─ Output:
-      {
-        "answer_correctness": 0.94,
-        "token_count": 847,
-        "latency_ms": 2341,
-        "toxicity_score": 0.02
-      }
-```
-
-#### 3.5.4 Evaluation Orchestration
-
-**Parallel Execution Pattern:**
-```
-Multi-Framework Evaluator
-  ├─ Phoenix Adapter  ──┐
-  ├─ Ragas Adapter    ──┼──> Async execution (parallel)
-  └─ MLflow Adapter   ──┘
-         ↓
-    Results Aggregator
-         ↓
-    {
-      "phoenix": {...},
-      "ragas": {...},
-      "mlflow": {...},
-      "aggregate_confidence": 0.91,
-      "execution_time_ms": 1847
+    return {
+        "faithfulness": result["faithfulness"],
+        "context_precision": result["context_precision"],
+        "context_recall": result["context_recall"],
+        "response_relevancy": result["answer_relevancy"]
     }
 ```
 
+**Parallel Execution Pattern (Phase 2):**
+```
+Multi-Framework Evaluator
+  ├─ DeepEval Adapter  ──┐
+  └─ Ragas Adapter     ──┼──> Async execution (parallel)
+                          ↓
+                  Results Aggregator
+                          ↓
+    {
+      "deepeval": {
+        "faithfulness": 0.96,
+        "bias": 0.94,
+        "answer_relevancy": 0.91,
+        "contextual_precision": 0.89
+      },
+      "ragas": {
+        "faithfulness": 0.95,
+        "context_precision": 0.91,
+        "context_recall": 0.87,
+        "response_relevancy": 0.93
+      },
+      "aggregate_confidence": 0.92,
+      "execution_time_ms": 3200
+    }
+```
+
+**Cost:** ~$0.012 per evaluation (4 metrics × $0.003)
+
+**Timeline:** 2-4 weeks for full integration
+
+---
+
+#### 3.5.3 Phase 3: Performance Metrics (NOT an Evaluator)
+
+**Status:** Proposed - Direct calculation, not via MLflow adapter
+
+**Approach:** Calculate performance metrics directly in pipeline code, not as evaluation framework
+
+**Metrics to Track:**
+
+1. **Token Count:**
+   - Direct calculation: `len(tokenizer.encode(response))`
+   - Cost tracking: `tokens × $0.000003`
+   - Alert threshold: > 1500 tokens
+
+2. **Latency:**
+   - Direct measurement: `time.time()` before/after LLM call
+   - SLA monitoring: P95 < 5s
+   - Alert threshold: > 5000ms
+
+3. **Cost per Request:**
+   - Formula: `(input_tokens × $0.000003) + (output_tokens × $0.000015)`
+   - Budget monitoring: < $0.10 per request
+
+**Why Not MLflow Adapter:**
+- Performance metrics don't require LLM evaluation
+- MLflow server adds operational overhead
+- Direct calculation is faster and cheaper
+- MLflow better suited for experiment tracking (not runtime evaluation)
+
+**Implementation:**
+```python
+# Direct performance tracking (no adapter needed)
+import time
+
+start = time.time()
+response = await llm.invoke(prompt)
+latency_ms = (time.time() - start) * 1000
+
+token_count = len(tokenizer.encode(response))
+cost = calculate_cost(prompt_tokens, response_tokens)
+
+metrics = {
+    "latency_ms": latency_ms,
+    "token_count": token_count,
+    "cost": cost
+}
+```
+
+**Cost:** $0 (no external API calls)
+
+---
+
+#### 3.5.4 Phase 4: Phoenix (OPTIONAL - Only if Gaps Exist)
+
+**Status:** Proposed - Low priority, only if hallucination detection proves insufficient
+
+**Framework:** Arize Phoenix (16 evaluations available)
+
+**When to Consider:**
+1. Ragas + DeepEval hallucination detection has gaps
+2. Enterprise Arize platform partnership exists
+3. Need for dedicated Q&A quality scoring (beyond Ragas/DeepEval)
+
+**Potential Metrics:**
+
+1. **Hallucination Detection (Classifier):**
+   - Specialized hallucination detector (binary PASS/FAIL)
+   - Threshold: 100% (blocking)
+   - Only add if Ragas/DeepEval insufficient
+
+2. **Q&A on Retrieved Data (Metric):**
+   - Evaluates answer quality based on context
+   - May overlap with Ragas metrics
+   - Threshold: ≥ 0.85
+
+**Challenges:**
+- Requires Arize platform account (external dependency)
+- Higher operational complexity
+- Cost: ~$0.015 per evaluation
+- Only 16 metrics vs Ragas's 23
+
+**Decision Criteria:**
+- **Add Phoenix if:** >5% of production responses show hallucination gaps after Phase 2
+- **Skip Phoenix if:** Ragas + DeepEval achieve >99% hallucination detection
+
+---
+
+#### 3.5.5 Evaluation Orchestration & Fallback Strategy
+
 **Timeout Strategy:**
-- Individual evaluation timeout: 5 seconds
-- Total evaluation timeout: 15 seconds
-- On timeout: Use partial results OR fallback confidence score
+- Individual adapter timeout: 5 seconds
+- Total evaluation timeout: 15 seconds (Phase 1), 10 seconds (Phase 2 with parallelization)
+- On timeout: Exclude adapter from aggregation, use remaining adapters
+
+**Failure Handling:**
+
+```yaml
+failure_scenarios:
+  adapter_timeout:
+    action: exclude_from_aggregation
+    impact: use_remaining_adapters_average
+    alert: log_warning
+    example: "Ragas timed out, using DeepEval score only"
+
+  adapter_exception:
+    action: exclude_from_aggregation
+    impact: same_as_timeout
+    alert: log_error
+    retry: on_next_evaluation
+
+  all_adapters_fail:
+    action: fall_back_to_guardrails_only
+    policy_decision: WARN (continue with caution)
+    alert: log_critical
+    threshold: still_enforce_PII_and_schema
+```
+
+**Graceful Degradation:**
+```
+Best Case (Phase 2+):
+  DeepEval + Ragas both succeed → Aggregate confidence score
+
+Partial Failure (Phase 2+):
+  DeepEval succeeds, Ragas fails → Use DeepEval score only (log warning)
+
+Total Evaluation Failure:
+  All adapters fail → Rely on Guardrails validation only (schema + PII)
+  → Return response with WARN flag
+  → Log critical alert for investigation
+```
 
 **Design Notes:**
-- Evaluations run **asynchronously** in parallel for performance
+- Evaluations run **asynchronously** in parallel (Phase 2+) for performance
 - Missing evaluations (due to timeout/error) are **flagged** but don't block response
 - Evaluation results are **cached** for identical inputs (60-second TTL)
 - All metrics feed into **OPA policy validation**
+
+---
+
+#### 3.5.6 Standardized Adapter Interface
+
+**Purpose:** Define a consistent interface for all evaluation adapters to ensure maintainability and extensibility
+
+**Base Adapter Specification:**
+
+```python
+# evaluation_adapters/base_adapter.py
+from abc import ABC, abstractmethod
+from typing import Dict, Any, List, Optional
+import asyncio
+
+class EvaluationAdapter(ABC):
+    """
+    Base class for all evaluation adapters (DeepEval, Ragas, Phoenix, etc.)
+
+    All adapters must implement this interface to ensure consistency
+    in the evaluation orchestration layer.
+    """
+
+    @abstractmethod
+    async def evaluate(
+        self,
+        llm_output: str,
+        context: Dict[str, Any],
+        timeout_seconds: int = 5
+    ) -> Dict[str, float]:
+        """
+        Execute evaluation metrics for the given LLM output.
+
+        Args:
+            llm_output: The JSON string response from the LLM
+            context: Dictionary containing required context fields:
+                - transcript: Original conversation transcript
+                - ground_truth: Optional golden dataset reference
+                - metadata: Any additional context needed
+            timeout_seconds: Max execution time before timeout
+
+        Returns:
+            Dictionary mapping metric names to scores (0.0 to 1.0):
+            {
+                "metric_name": 0.95,
+                "another_metric": 0.87,
+                ...
+            }
+
+        Raises:
+            TimeoutError: If evaluation exceeds timeout_seconds
+            EvaluationError: If evaluation fails for any reason
+        """
+        pass
+
+    @abstractmethod
+    def get_required_fields(self) -> List[str]:
+        """
+        Return list of required context fields for this adapter.
+
+        Returns:
+            List of field names that must be present in context dict
+            Example: ["transcript", "ground_truth"]
+        """
+        pass
+
+    @abstractmethod
+    def get_metric_thresholds(self) -> Dict[str, float]:
+        """
+        Return recommended thresholds for each metric (0.0 to 1.0).
+
+        Returns:
+            Dictionary mapping metric names to threshold values:
+            {
+                "faithfulness": 0.95,
+                "context_precision": 0.90,
+                ...
+            }
+        """
+        pass
+
+    @abstractmethod
+    def get_metric_weights(self) -> Dict[str, float]:
+        """
+        Return weights for each metric in aggregation (must sum to 1.0).
+
+        Returns:
+            Dictionary mapping metric names to weights:
+            {
+                "faithfulness": 0.50,
+                "bias": 0.30,
+                "relevancy": 0.20
+            }
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Return adapter name (e.g., 'deepeval', 'ragas', 'phoenix')"""
+        pass
+
+    @property
+    @abstractmethod
+    def version(self) -> str:
+        """Return adapter version (e.g., '1.2.0')"""
+        pass
+```
+
+**Example Implementation: DeepEval Adapter**
+
+```python
+# evaluation_adapters/deepeval_adapter.py
+from evaluation_adapters.base_adapter import EvaluationAdapter
+from deepeval.metrics import FaithfulnessMetric, BiasMetric
+from deepeval.test_case import LLMTestCase
+import asyncio
+
+class DeepEvalAdapter(EvaluationAdapter):
+    """DeepEval evaluation adapter implementation"""
+
+    async def evaluate(
+        self,
+        llm_output: str,
+        context: Dict[str, Any],
+        timeout_seconds: int = 5
+    ) -> Dict[str, float]:
+        """Execute DeepEval metrics with timeout"""
+
+        transcript = context.get("transcript")
+        if not transcript:
+            raise ValueError("transcript required in context")
+
+        test_case = LLMTestCase(
+            input=transcript,
+            actual_output=llm_output,
+            retrieval_context=[transcript]
+        )
+
+        # Execute metrics with timeout
+        async def run_metrics():
+            faithfulness = FaithfulnessMetric(threshold=0.95)
+            bias = BiasMetric(threshold=0.9)
+
+            # Run sequentially (DeepEval doesn't support parallel)
+            await faithfulness.a_measure(test_case)
+            await bias.a_measure(test_case)
+
+            return {
+                "faithfulness": faithfulness.score,
+                "bias": bias.score
+            }
+
+        try:
+            results = await asyncio.wait_for(
+                run_metrics(),
+                timeout=timeout_seconds
+            )
+            return results
+        except asyncio.TimeoutError:
+            raise TimeoutError(f"DeepEval evaluation exceeded {timeout_seconds}s")
+
+    def get_required_fields(self) -> List[str]:
+        return ["transcript"]
+
+    def get_metric_thresholds(self) -> Dict[str, float]:
+        return {
+            "faithfulness": 0.95,
+            "bias": 0.90
+        }
+
+    def get_metric_weights(self) -> Dict[str, float]:
+        return {
+            "faithfulness": 0.60,  # 60% weight in DeepEval score
+            "bias": 0.40           # 40% weight in DeepEval score
+        }
+
+    @property
+    def name(self) -> str:
+        return "deepeval"
+
+    @property
+    def version(self) -> str:
+        return "1.2.0"
+```
+
+**Evaluation Orchestrator:**
+
+```python
+# evaluation_orchestrator.py
+from typing import List, Dict, Any
+import asyncio
+from evaluation_adapters.base_adapter import EvaluationAdapter
+
+class EvaluationOrchestrator:
+    """
+    Orchestrates parallel execution of multiple evaluation adapters.
+    Handles timeout, failure recovery, and result aggregation.
+    """
+
+    def __init__(self, adapters: List[EvaluationAdapter]):
+        self.adapters = adapters
+
+    async def evaluate_all(
+        self,
+        llm_output: str,
+        context: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Execute all adapters in parallel and aggregate results.
+
+        Returns:
+            {
+                "adapter_results": {
+                    "deepeval": {"faithfulness": 0.96, "bias": 0.94},
+                    "ragas": {"faithfulness": 0.95, "context_recall": 0.87}
+                },
+                "aggregate_confidence": 0.92,
+                "failed_adapters": [],
+                "execution_time_ms": 3200
+            }
+        """
+
+        start_time = asyncio.get_event_loop().time()
+
+        # Execute all adapters in parallel
+        tasks = [
+            self._safe_evaluate(adapter, llm_output, context)
+            for adapter in self.adapters
+        ]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Separate successful and failed results
+        adapter_results = {}
+        failed_adapters = []
+
+        for adapter, result in zip(self.adapters, results):
+            if isinstance(result, Exception):
+                failed_adapters.append({
+                    "name": adapter.name,
+                    "error": str(result)
+                })
+            else:
+                adapter_results[adapter.name] = result
+
+        # Calculate aggregate confidence score
+        aggregate_confidence = self._calculate_aggregate(
+            adapter_results,
+            self.adapters
+        )
+
+        execution_time_ms = (asyncio.get_event_loop().time() - start_time) * 1000
+
+        return {
+            "adapter_results": adapter_results,
+            "aggregate_confidence": aggregate_confidence,
+            "failed_adapters": failed_adapters,
+            "execution_time_ms": execution_time_ms
+        }
+
+    async def _safe_evaluate(
+        self,
+        adapter: EvaluationAdapter,
+        llm_output: str,
+        context: Dict[str, Any]
+    ) -> Dict[str, float]:
+        """Execute adapter with error handling"""
+        try:
+            return await adapter.evaluate(llm_output, context, timeout_seconds=5)
+        except Exception as e:
+            # Log error and re-raise for gather() to catch
+            print(f"ERROR: {adapter.name} evaluation failed: {e}")
+            raise
+
+    def _calculate_aggregate(
+        self,
+        adapter_results: Dict[str, Dict[str, float]],
+        adapters: List[EvaluationAdapter]
+    ) -> float:
+        """
+        Calculate weighted aggregate confidence score.
+
+        Formula (Phase 1 - DeepEval only):
+            aggregate = deepeval_faithfulness * 0.60 + deepeval_bias * 0.40
+
+        Formula (Phase 2 - DeepEval + Ragas):
+            aggregate = (deepeval_avg * 0.40) + (ragas_avg * 0.60)
+        """
+
+        if not adapter_results:
+            return 0.0
+
+        total_score = 0.0
+        total_weight = 0.0
+
+        # Adapter-level weights
+        adapter_weights = {
+            "deepeval": 0.40,  # 40% weight in final score
+            "ragas": 0.60      # 60% weight in final score
+        }
+
+        for adapter_name, metrics in adapter_results.items():
+            adapter = next((a for a in adapters if a.name == adapter_name), None)
+            if not adapter:
+                continue
+
+            # Calculate weighted average for this adapter
+            metric_weights = adapter.get_metric_weights()
+            adapter_score = sum(
+                metrics[metric] * metric_weights.get(metric, 0)
+                for metric in metrics
+            )
+
+            # Apply adapter-level weight
+            adapter_weight = adapter_weights.get(adapter_name, 1.0 / len(adapter_results))
+            total_score += adapter_score * adapter_weight
+            total_weight += adapter_weight
+
+        return total_score / total_weight if total_weight > 0 else 0.0
+```
+
+**Benefits of Standardized Interface:**
+1. **Consistency:** All adapters follow same contract
+2. **Extensibility:** Easy to add new adapters (Phoenix, custom)
+3. **Testability:** Mock adapters for unit tests
+4. **Maintainability:** Clear separation of concerns
+5. **Observability:** Standardized error handling and logging
 
 ---
 
@@ -3041,12 +3541,12 @@ audit_events:
 - [ ] End-to-end request-response flow (no evaluation yet)
 
 **Week 2: Evaluation Integration**
-- [ ] Evaluation Orchestrator framework
-- [ ] Phoenix Adapter implementation
-- [ ] Ragas Adapter implementation
-- [ ] MLflow Adapter implementation
-- [ ] Parallel execution with timeout handling
-- [ ] Result aggregation logic
+- [x] DeepEval integration (ALREADY COMPLETE - 18 tests, 100% pass rate)
+- [ ] Evaluation Orchestrator framework (standardized adapter interface)
+- [ ] Ragas Adapter implementation (PRIORITY - 23 metrics available)
+- [ ] Parallel execution with timeout handling (DeepEval + Ragas)
+- [ ] Result aggregation logic with weighted scoring
+- [ ] Performance metrics (direct calculation - latency, token count, cost)
 
 **Week 3: Testing & Validation**
 - [ ] Unit tests for each pipeline stage
@@ -3191,7 +3691,7 @@ audit_events:
 |----------|-------------------|----------|-----------|
 | **LLM Provider** | OpenAI GPT-4, Anthropic Claude, Google Gemini | Anthropic Claude Sonnet 4.5 | Balance of quality, cost, and speed. Temperature=0.25 for precision. Existing promptproject uses Claude. |
 | **Policy Engine** | Custom Python, Casbin, OPA | Open Policy Agent (OPA) | Industry standard, declarative Rego language, testable, GitOps-friendly, widely adopted. |
-| **Evaluation Frameworks** | DeepEval only, Ragas only, MLflow only | Phoenix + Ragas + MLflow | Multi-framework validation reduces single-point-of-failure. Learnings from promptforge show 93 evaluations across 6 adapters. |
+| **Evaluation Frameworks** | DeepEval only, Ragas only, Phoenix only | DeepEval (Phase 1) → DeepEval + Ragas (Phase 2) | Phased approach: Start with DeepEval (already implemented, 18 tests passing). Add Ragas for 23 comprehensive metrics (Context Precision/Recall). Phoenix optional if hallucination gaps found. MLflow for experiment tracking only, not runtime evaluation. |
 | **PII Detection** | spaCy NER, AWS Comprehend, Presidio | Presidio (Microsoft) | Open-source, customizable, comprehensive entity recognition, already in promptproject. |
 | **Tracing** | Jaeger native, OpenTelemetry, Zipkin | OpenTelemetry | Vendor-neutral, widely adopted, supports multiple backends (Jaeger, Tempo, etc.). |
 | **Metrics** | StatsD, Prometheus, DataDog | Prometheus | Open-source, pull-based model, integrates with Grafana, K8s-native. |
@@ -3202,15 +3702,49 @@ audit_events:
 
 **Baseline Configuration:**
 
+#### Phase 1: DeepEval Only (Current)
+
 | Metric | Weight | Threshold | Justification |
 |--------|--------|-----------|---------------|
-| **Phoenix: Q&A Quality** | 25% | ≥ 0.85 | Core quality indicator |
-| **Phoenix: Hallucination** | 15% | PASS (binary) | Critical for "confidently wrong" prevention |
-| **Ragas: Faithfulness** | 30% | ≥ 0.95 | Most important - facts must be grounded |
-| **Ragas: Context Precision** | 15% | ≥ 0.90 | Prevents over-extraction |
-| **Ragas: Context Recall** | 10% | ≥ 0.85 | Ensures completeness |
-| **MLflow: Answer Correctness** | 5% | ≥ 0.90 | Regression validation |
-| **Aggregate Confidence** | 100% | ≥ 0.85 | **Final threshold for OPA ALLOW** |
+| **DeepEval: Faithfulness** | 60% | ≥ 0.95 | Most critical - facts must be grounded in transcript |
+| **DeepEval: Bias** | 40% | ≥ 0.90 | Ensures fair, unbiased financial advice |
+| **Aggregate Confidence (Phase 1)** | 100% | ≥ 0.90 | **Single-framework threshold (conservative)** |
+
+**Formula:**
+```
+aggregate_confidence = (faithfulness × 0.60) + (bias × 0.40)
+```
+
+#### Phase 2: DeepEval + Ragas (Recommended)
+
+| Metric | Weight | Threshold | Justification |
+|--------|--------|-----------|---------------|
+| **DeepEval: Faithfulness** | 24% (60% × 0.40) | ≥ 0.95 | Redundant check with Ragas faithfulness |
+| **DeepEval: Bias** | 16% (40% × 0.40) | ≥ 0.90 | Ensures fair representation |
+| **Ragas: Faithfulness** | 30% (50% × 0.60) | ≥ 0.95 | Primary faithfulness check |
+| **Ragas: Context Precision** | 15% (25% × 0.60) | ≥ 0.90 | Prevents over-extraction |
+| **Ragas: Context Recall** | 10% (17% × 0.60) | ≥ 0.85 | Ensures completeness |
+| **Ragas: Response Relevancy** | 5% (8% × 0.60) | ≥ 0.90 | Validates relevance |
+| **Aggregate Confidence (Phase 2)** | 100% | ≥ 0.85 | **Multi-framework threshold (balanced)** |
+
+**Formula:**
+```
+deepeval_score = (faithfulness × 0.60) + (bias × 0.40)
+ragas_score = (faithfulness × 0.50) + (context_precision × 0.25) +
+              (context_recall × 0.17) + (response_relevancy × 0.08)
+
+aggregate_confidence = (deepeval_score × 0.40) + (ragas_score × 0.60)
+```
+
+#### Phase 4: Full Multi-Framework (Optional)
+
+| Metric | Weight | Threshold | Justification |
+|--------|--------|-----------|---------------|
+| **DeepEval Aggregate** | 30% | ≥ 0.92 | Baseline quality check |
+| **Ragas Aggregate** | 50% | ≥ 0.90 | Primary evaluation framework |
+| **Phoenix: Hallucination** | 10% (binary) | PASS | Critical blocking metric |
+| **Phoenix: Q&A Quality** | 10% | ≥ 0.85 | Additional quality signal |
+| **Aggregate Confidence (Phase 4)** | 100% | ≥ 0.85 | **Enhanced multi-framework threshold** |
 
 **Tuning Strategy:**
 
@@ -3242,20 +3776,53 @@ Step 4: Production A/B Testing
 
 ### 11.3 Cost Analysis
 
-**Per-Request Cost Breakdown:**
+**Per-Request Cost Breakdown (Revised):**
+
+#### Phase 1: Current Implementation (DeepEval Only)
 
 | Component | Provider | Cost Estimate | Notes |
 |-----------|----------|---------------|-------|
 | **Input Schema Conversion** | Claude Sonnet 4.5 | $0.005 | ~500 tokens input, 200 tokens output |
-| **Fact Extraction** | Claude Sonnet 4.5 | $0.025 | ~1200 tokens input, 800 tokens output |
-| **Phoenix Evaluation** | GPT-4 (via Phoenix API) | $0.015 | ~400 tokens per metric |
-| **Ragas Evaluation** | GPT-4 + Embeddings | $0.020 | Multiple metrics, embeddings |
-| **MLflow Evaluation** | GPT-4 + Perspective API | $0.012 | Answer correctness + toxicity check |
+| **Fact Extraction** | Claude Sonnet 4.5 | $0.050 | ~1200 tokens input, 800 tokens output |
+| **DeepEval Evaluation** | OpenAI GPT-4 (4 metrics) | $0.020 | Faithfulness, Bias, Relevancy, Precision |
+| **Guardrails Validation** | Self-hosted | $0.001 | Pydantic + Presidio |
 | **OPA Policy Validation** | Self-hosted | $0.001 | Negligible compute cost |
-| **Total per Request** | - | **$0.078** | **~8 cents per request** |
+| **Total per Request (Phase 1)** | - | **$0.077** | **~8 cents per request** |
+
+#### Phase 2: DeepEval + Ragas (Recommended Next)
+
+| Component | Provider | Cost Estimate | Notes |
+|-----------|----------|---------------|-------|
+| **Input Schema Conversion** | Claude Sonnet 4.5 | $0.005 | ~500 tokens input, 200 tokens output |
+| **Fact Extraction** | Claude Sonnet 4.5 | $0.050 | ~1200 tokens input, 800 tokens output |
+| **DeepEval Evaluation** | OpenAI GPT-4 (4 metrics) | $0.020 | Faithfulness, Bias, Relevancy, Precision |
+| **Ragas Evaluation** | OpenAI GPT-4 (4 metrics) | $0.012 | Faithfulness, Context Precision/Recall, Relevancy |
+| **Guardrails Validation** | Self-hosted | $0.001 | Pydantic + Presidio |
+| **OPA Policy Validation** | Self-hosted | $0.001 | Negligible compute cost |
+| **Total per Request (Phase 2)** | - | **$0.089** | **~9 cents per request** |
+
+#### Phase 3: Performance Metrics (No Additional Cost)
+
+| Component | Provider | Cost Estimate | Notes |
+|-----------|----------|---------------|-------|
+| **Token Count** | Direct calculation | $0.000 | `len(tokenizer.encode(response))` |
+| **Latency** | Direct measurement | $0.000 | `time.time()` before/after |
+| **Cost Tracking** | Direct calculation | $0.000 | Formula-based |
+| **Total per Request (Phase 3)** | - | **$0.089** | **Same as Phase 2** |
+
+#### Phase 4: Phoenix (Optional - Only if Needed)
+
+| Component | Provider | Cost Estimate | Notes |
+|-----------|----------|---------------|-------|
+| **All Phase 2 Components** | - | $0.089 | DeepEval + Ragas + LLM |
+| **Phoenix Evaluation** | Arize Phoenix (3 metrics) | $0.015 | Q&A Quality, Hallucination, Summarization |
+| **Total per Request (Phase 4)** | - | **$0.104** | **~10 cents per request** |
+
+---
 
 **Monthly Cost Projection:**
 
+#### Phase 1 (Current):
 ```
 Assumptions:
 - 10,000 requests/day
@@ -3263,33 +3830,92 @@ Assumptions:
 - 20% fallback rate (no evaluation cost for schema conversion failures)
 
 Breakdown:
-- LLM Invocations: $9,000 (300k * $0.030)
-- Evaluations: $14,100 (240k successful * $0.047)
+- LLM Invocations: $16,500 (300k * $0.055)
+- DeepEval Evaluations: $4,800 (240k successful * $0.020)
 - Infrastructure: $500 (K8s, OPA, monitoring)
 
-Total Monthly Cost: $23,600
-Cost per Request: $0.078
+Total Monthly Cost: $21,800
+Cost per Request: $0.077
 ```
+
+#### Phase 2 (DeepEval + Ragas):
+```
+Assumptions:
+- 10,000 requests/day
+- 300,000 requests/month
+- 20% fallback rate
+
+Breakdown:
+- LLM Invocations: $16,500 (300k * $0.055)
+- DeepEval Evaluations: $4,800 (240k * $0.020)
+- Ragas Evaluations: $2,880 (240k * $0.012)
+- Infrastructure: $500 (K8s, OPA, monitoring)
+
+Total Monthly Cost: $24,680
+Cost per Request: $0.089
+Additional Cost vs Phase 1: +$2,880/month (+13%)
+```
+
+#### Phase 4 (Full Multi-Framework - Optional):
+```
+Assumptions:
+- 10,000 requests/day
+- 300,000 requests/month
+- 20% fallback rate
+
+Breakdown:
+- LLM Invocations: $16,500 (300k * $0.055)
+- DeepEval Evaluations: $4,800 (240k * $0.020)
+- Ragas Evaluations: $2,880 (240k * $0.012)
+- Phoenix Evaluations: $3,600 (240k * $0.015)
+- Infrastructure: $500 (K8s, OPA, monitoring)
+
+Total Monthly Cost: $28,280
+Cost per Request: $0.104
+Additional Cost vs Phase 2: +$3,600/month (+15%)
+```
+
+---
 
 **Cost Optimization Strategies:**
 
 1. **Evaluation Caching (60s TTL):**
    - Cache evaluation results for identical inputs
    - Expected savings: 20% reduction in evaluation costs
-   - New cost: $0.068/request
+   - Phase 1: $0.077 → $0.073/request
+   - Phase 2: $0.089 → $0.083/request
 
-2. **Selective Evaluation:**
-   - Run Phoenix + Ragas always (critical)
-   - Run MLflow only on golden dataset validation (periodic)
+2. **Selective Evaluation (Confidence-based):**
+   - Run full evaluation suite only when Guardrails flags concerns
+   - Run lightweight checks (DeepEval only) for high-confidence cases
    - Expected savings: 15% reduction
-   - New cost: $0.066/request
+   - Phase 2: $0.089 → $0.076/request
 
 3. **Model Optimization:**
-   - Use GPT-4o-mini for non-critical evaluations
-   - Expected savings: 30% reduction in evaluation costs
-   - New cost: $0.064/request
+   - Use GPT-4o-mini for non-critical evaluations (Bias, Relevancy)
+   - Keep GPT-4 for critical metrics (Faithfulness, Hallucination)
+   - Expected savings: 25% reduction in evaluation costs
+   - Phase 2: $0.089 → $0.081/request
 
-**Target Cost:** < $0.10 per request
+4. **Batch Processing:**
+   - Batch multiple requests for evaluation (where latency allows)
+   - Expected savings: 10% reduction in API overhead
+   - Phase 2: $0.089 → $0.085/request
+
+**Combined Optimization (Phase 2):**
+- Base cost: $0.089/request
+- With caching + selective eval + model optimization: $0.068/request
+- **Target cost: < $0.10 per request ✅**
+
+**Cost Comparison Summary:**
+
+| Phase | Base Cost | Optimized Cost | Monthly (10k/day) |
+|-------|-----------|----------------|-------------------|
+| **Phase 1 (Current)** | $0.077 | $0.065 | $19,500 |
+| **Phase 2 (Recommended)** | $0.089 | $0.068 | $20,400 |
+| **Phase 4 (Optional)** | $0.104 | $0.078 | $23,400 |
+
+**Recommendation:** Phase 2 (DeepEval + Ragas) provides best balance of quality and cost. Phoenix (Phase 4) only if hallucination detection gaps identified.
 
 ---
 
@@ -3299,7 +3925,7 @@ This reference architecture provides a comprehensive blueprint for transforming 
 
 1. **OPA Integration:** Declarative policies prevent "confidently wrong" responses through multi-metric confidence scoring and business rule validation.
 
-2. **Multi-Framework Evaluation:** Phoenix, Ragas, and MLflow provide comprehensive quality assessment, reducing single-framework bias.
+2. **Phased Evaluation Strategy:** Pragmatic evolution from single-framework (DeepEval - already implemented) to multi-framework validation (DeepEval + Ragas), avoiding premature complexity.
 
 3. **Structured Pipeline:** 7-stage flow with clear responsibilities, error handling, and fallback mechanisms.
 
@@ -3309,14 +3935,96 @@ This reference architecture provides a comprehensive blueprint for transforming 
 
 The phased implementation roadmap (12 weeks) provides a clear path from the current test-focused system to a production-ready API service.
 
-**Next Steps:**
-1. Review this architecture with stakeholders
-2. Prioritize phases based on business needs
-3. Begin Phase 1 implementation (Foundation)
-4. Iteratively refine policies and thresholds based on production data
+---
+
+## Key Recommendations
+
+### **Evaluation Framework Priorities (REVISED)**
+
+**Phase 1: DeepEval Only (CURRENT - IMPLEMENTED ✅)**
+- Status: Production-ready, 18/18 tests passing (100%)
+- Cost: $0.077/request
+- Timeline: Already complete
+
+**Phase 2: Add Ragas (RECOMMENDED NEXT 🎯)**
+- Priority: HIGH - Implement within 2-4 weeks
+- Rationale:
+  - Most comprehensive evaluation library (23 metrics)
+  - Pure Python (no external platform dependency)
+  - Context-aware metrics (Context Precision, Context Recall)
+  - Redundant faithfulness check increases confidence
+- Cost: $0.089/request (+$0.012 vs Phase 1, +13%)
+- Benefits: Multi-framework validation reduces single-point-of-failure
+
+**Phase 3: Performance Metrics (Direct Calculation)**
+- Priority: MEDIUM - Implement alongside Phase 2
+- Approach: Direct calculation (no adapter framework needed)
+- Metrics: Token count, latency, cost per request
+- Cost: $0 (no external API calls)
+- Benefits: Cost tracking and SLA monitoring
+
+**Phase 4: Phoenix (OPTIONAL - Only if Gaps Identified)**
+- Priority: LOW - Evaluate after 3 months of Phase 2 production data
+- Decision criteria:
+  - Add if: >5% hallucination gaps after Ragas integration
+  - Skip if: DeepEval + Ragas achieve >99% hallucination detection
+- Cost: $0.104/request (+$0.015 vs Phase 2, +15%)
+- Challenges: Requires Arize platform account, higher operational complexity
+
+**NOT RECOMMENDED:**
+- ❌ MLflow as evaluation adapter: Overkill, performance metrics can be calculated directly
+- ❌ Simultaneous multi-framework deployment: Adds complexity without proven benefit
+- ❌ Phoenix before Ragas: Higher cost, lower metric count, external dependency
 
 ---
 
-**Document Version:** 2.0
+## Implementation Priority Matrix
+
+| Phase | Priority | Timeline | Cost Impact | Risk | Value |
+|-------|----------|----------|-------------|------|-------|
+| **DeepEval (Phase 1)** | ✅ Complete | Done | $0.077/req | Low | High |
+| **Ragas (Phase 2)** | 🎯 HIGH | 2-4 weeks | +$0.012/req | Low | High |
+| **Performance Metrics** | 🔵 MEDIUM | 2-4 weeks | $0/req | Low | Medium |
+| **OPA Integration** | 🔵 MEDIUM | 4-6 weeks | Minimal | Medium | High |
+| **Phoenix (Phase 4)** | ⚪ LOW | TBD | +$0.015/req | Medium | Low-Medium |
+
+---
+
+## Success Metrics
+
+**Phase 1 (Current):**
+- ✅ 18/18 tests passing (100% pass rate)
+- ✅ 100% adversarial security compliance
+- ✅ 100% PII detection compliance
+- ✅ Cost: $0.077/request (within budget)
+
+**Phase 2 (Target - 3 months):**
+- Multi-framework validation operational (DeepEval + Ragas)
+- Aggregate confidence scoring ≥ 0.85 threshold enforced
+- <1% false positive rate (correct responses blocked)
+- <0.1% false negative rate ("confidently wrong" responses allowed)
+- Cost: <$0.10/request with optimizations
+- P95 latency: <5s end-to-end
+
+**Phase 3 (Target - 6 months):**
+- OPA policy validation preventing 100% of adversarial attacks
+- Observability stack operational (OpenTelemetry + Prometheus + Grafana)
+- 99% uptime SLA
+- Zero critical security incidents
+
+---
+
+**Next Steps:**
+1. ✅ Review this architecture with stakeholders
+2. 🎯 **Begin Phase 2 Ragas integration (HIGH PRIORITY)**
+3. Create standardized adapter interface (Section 3.5.6)
+4. Implement evaluation orchestrator with parallel execution
+5. Deploy to staging environment for A/B testing
+6. Iteratively refine policies and thresholds based on production data
+
+---
+
+**Document Version:** 3.0 (REVISED)
 **Last Updated:** 2025-10-16
-**Status:** Design Specification - Ready for Implementation Review
+**Status:** Design Specification - Ready for Phase 2 Implementation
+**Key Changes:** Prioritized Ragas over Phoenix/MLflow, added phased evaluation strategy, updated cost analysis
