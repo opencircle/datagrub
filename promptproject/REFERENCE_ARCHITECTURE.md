@@ -13,7 +13,7 @@ This document defines the reference architecture for refining the **promptprojec
 
 **Key Enhancements:**
 1. **OPA Integration:** Open Policy Agent validates LLM responses against business policies before returning results
-2. **Multi-Framework Evaluation:** Phoenix, Ragas, and MLflow evaluations (learning from promptforge)
+2. **Multi-Framework Evaluation:** Phoenix and Ragas evaluations (learning from promptforge)
 3. **Structured Pipeline:** 7-stage request-response flow with PII handling, schema validation, evaluation, and policy gates
 4. **Fallback Mechanisms:** Graceful degradation when OPA policies fail
 5. **Observable Architecture:** Comprehensive logging, metrics, and tracing
@@ -96,7 +96,7 @@ Test Pass/Fail (pytest)
 
 2. **Limited Evaluation Frameworks:**
    - Only DeepEval is integrated
-   - Missing Phoenix, Ragas, and MLflow (available in promptforge)
+   - Missing Phoenix and Ragas (available in promptforge)
    - No multi-framework evaluation strategy
 
 3. **No OPA Integration:**
@@ -167,12 +167,6 @@ Test Pass/Fail (pytest)
 │  │           │  - Context Precision/Recall                  │    │  │
 │  │           │  - Response Relevancy                        │    │  │
 │  │           └─────────────────────────────────────────────┘    │  │
-│  │           ┌─────────────────────────────────────────────┐    │  │
-│  │           │  MLflow:                                     │    │  │
-│  │           │  - Answer Correctness                        │    │  │
-│  │           │  - Token Count & Latency                     │    │  │
-│  │           │  - Toxicity Score                            │    │  │
-│  │           └─────────────────────────────────────────────┘    │  │
 │  └──────────────────────────────────────────────────────────────┘  │
 │                                    ↓                                 │
 │  ┌──────────────────────────────────────────────────────────────┐  │
@@ -205,7 +199,7 @@ Test Pass/Fail (pytest)
 2. **Fail-Safe Design:** Fallback responses when policies fail
 3. **Observable by Default:** Tracing, logging, and metrics at every stage
 4. **Policy-Driven:** Business rules centralized in OPA Rego policies
-5. **Framework Agnostic:** Pluggable evaluation adapters (Phoenix, Ragas, MLflow)
+5. **Framework Agnostic:** Pluggable evaluation adapters (Phoenix, Ragas)
 6. **Schema-First:** JSON Schema drives input/output contracts
 
 ---
@@ -1269,8 +1263,8 @@ thresholds := {
     "ragas_faithfulness": 0.95,
     "ragas_context_precision": 0.90,
     "ragas_context_recall": 0.85,
-    "mlflow_answer_correctness": 0.90,
-    "mlflow_toxicity_max": 0.10
+    "token_count_max": 1500,
+    "latency_max_ms": 5000
 }
 
 # Evaluate quality metrics
@@ -1280,30 +1274,29 @@ quality_pass if {
     input.evaluations.ragas.faithfulness >= thresholds.ragas_faithfulness
     input.evaluations.ragas.context_precision >= thresholds.ragas_context_precision
     input.evaluations.ragas.context_recall >= thresholds.ragas_context_recall
-    input.evaluations.mlflow.toxicity_score <= thresholds.mlflow_toxicity_max
 }
 
-# Token efficiency check
+# Token efficiency check (measured directly, not via evaluation framework)
 token_efficient if {
-    input.evaluations.mlflow.token_count <= 1500
+    input.performance.token_count <= thresholds.token_count_max
 }
 
-# Latency SLA
+# Latency SLA (measured directly, not via evaluation framework)
 latency_within_sla if {
-    input.evaluations.mlflow.latency_ms <= 5000
+    input.performance.latency_ms <= thresholds.latency_max_ms
 }
 
 # Warn on performance issues
 warn[msg] if {
     not token_efficient
-    msg := sprintf("Token count %d exceeds efficiency target 1500",
-                   [input.evaluations.mlflow.token_count])
+    msg := sprintf("Token count %d exceeds efficiency target %d",
+                   [input.performance.token_count, thresholds.token_count_max])
 }
 
 warn[msg] if {
     not latency_within_sla
-    msg := sprintf("Latency %dms exceeds SLA 5000ms",
-                   [input.evaluations.mlflow.latency_ms])
+    msg := sprintf("Latency %dms exceeds SLA %dms",
+                   [input.performance.latency_ms, thresholds.latency_max_ms])
 }
 ```
 
@@ -1441,12 +1434,9 @@ aggregate_confidence := score if {
     ragas_precision := input.evaluations.ragas.context_precision * 0.15
     ragas_recall := input.evaluations.ragas.context_recall * 0.10
 
-    # MLflow weights
-    mlflow_correctness := input.evaluations.mlflow.answer_correctness * 0.05
-
-    # Aggregate
+    # Aggregate (weights redistributed after removing MLflow)
     score := phoenix_qa + phoenix_hallucination + ragas_faithfulness +
-             ragas_precision + ragas_recall + mlflow_correctness
+             ragas_precision + ragas_recall
 }
 ```
 
@@ -1591,8 +1581,11 @@ opa check policies/opa/*.rego
     "confidence_score": 0.91,
     "evaluation_results": {
       "phoenix": {"qa_quality": 0.89, "hallucination_detected": false},
-      "ragas": {"faithfulness": 0.96, "context_precision": 0.91},
-      "mlflow": {"answer_correctness": 0.94, "latency_ms": 2341}
+      "ragas": {"faithfulness": 0.96, "context_precision": 0.91}
+    },
+    "performance": {
+      "token_count": 847,
+      "latency_ms": 2341
     },
     "opa_decision": {
       "allowed": true,
@@ -1624,8 +1617,10 @@ opa check policies/opa/*.rego
     },
     "evaluation_results": {
       "phoenix": {"qa_quality": 0.72, "hallucination_detected": true},
-      "ragas": {"faithfulness": 0.68, "context_precision": 0.81},
-      "mlflow": {"answer_correctness": 0.74, "latency_ms": 2341}
+      "ragas": {"faithfulness": 0.68, "context_precision": 0.81}
+    },
+    "performance": {
+      "latency_ms": 2341
     },
     "fallback_triggered": true
   },
@@ -1803,11 +1798,10 @@ fallback_templates:
 │  │  │  - Response Relevancy: 0.93                              │ │ │
 │  │  └─────────────────────────────────────────────────────────┘ │ │
 │  │  ┌─────────────────────────────────────────────────────────┐ │ │
-│  │  │  MLflow Adapter (Async)                                  │ │ │
-│  │  │  - Answer Correctness: 0.94                              │ │ │
+│  │  │  Performance Metrics (Direct Calculation)                │ │ │
 │  │  │  - Token Count: 847                                      │ │ │
 │  │  │  - Latency: 2341ms                                       │ │ │
-│  │  │  - Toxicity Score: 0.02                                  │ │ │
+│  │  │  - Cost: $0.089                                          │ │ │
 │  │  └─────────────────────────────────────────────────────────┘ │ │
 │  └───────────────────────────────────────────────────────────────┘ │
 │  Output: Aggregated evaluation metrics                               │
@@ -1977,13 +1971,12 @@ min_confidence := 0.85
 # Weighted confidence calculation
 aggregate_confidence := score if {
     phoenix := input.evaluations.phoenix.qa_quality * 0.25
-    ragas_faith := input.evaluations.ragas.faithfulness * 0.30
+    ragas_faith := input.evaluations.ragas.faithfulness * 0.35
     ragas_prec := input.evaluations.ragas.context_precision * 0.15
     ragas_recall := input.evaluations.ragas.context_recall * 0.10
     phoenix_hall := (1 - input.evaluations.phoenix.hallucination_detected) * 0.15
-    mlflow_correct := input.evaluations.mlflow.answer_correctness * 0.05
 
-    score := phoenix + ragas_faith + ragas_prec + ragas_recall + phoenix_hall + mlflow_correct
+    score := phoenix + ragas_faith + ragas_prec + ragas_recall + phoenix_hall
 }
 
 # Decision
@@ -2093,8 +2086,7 @@ import future.keywords.if
 thresholds := {
     "ragas_faithfulness": 0.95,
     "ragas_context_precision": 0.90,
-    "ragas_context_recall": 0.85,
-    "mlflow_toxicity_max": 0.10
+    "ragas_context_recall": 0.85
 }
 
 # Quality checks
@@ -2102,7 +2094,6 @@ quality_pass if {
     input.evaluations.ragas.faithfulness >= thresholds.ragas_faithfulness
     input.evaluations.ragas.context_precision >= thresholds.ragas_context_precision
     input.evaluations.ragas.context_recall >= thresholds.ragas_context_recall
-    input.evaluations.mlflow.toxicity_score <= thresholds.mlflow_toxicity_max
 }
 
 # Warning for quality issues
@@ -2110,12 +2101,6 @@ warn[msg] if {
     input.evaluations.ragas.faithfulness < thresholds.ragas_faithfulness
     msg := sprintf("Low faithfulness score: %.2f (threshold: %.2f)",
                    [input.evaluations.ragas.faithfulness, thresholds.ragas_faithfulness])
-}
-
-warn[msg] if {
-    input.evaluations.mlflow.toxicity_score > thresholds.mlflow_toxicity_max
-    msg := sprintf("Elevated toxicity score: %.2f (threshold: %.2f)",
-                   [input.evaluations.mlflow.toxicity_score, thresholds.mlflow_toxicity_max])
 }
 ```
 
@@ -2229,31 +2214,31 @@ sla := {
 
 # Check latency
 latency_within_sla if {
-    input.evaluations.mlflow.latency_ms <= sla.latency_p95_ms
+    input.performance.latency_ms <= sla.latency_p95_ms
 }
 
 # Check token efficiency
 token_efficient if {
-    input.evaluations.mlflow.token_count <= sla.token_count_max
+    input.performance.token_count <= sla.token_count_max
 }
 
 # Warnings for performance issues
 warn[msg] if {
     not latency_within_sla
     msg := sprintf("Latency %dms exceeds SLA %dms",
-                   [input.evaluations.mlflow.latency_ms, sla.latency_p95_ms])
+                   [input.performance.latency_ms, sla.latency_p95_ms])
 }
 
 warn[msg] if {
     not token_efficient
     msg := sprintf("Token count %d exceeds efficiency target %d",
-                   [input.evaluations.mlflow.token_count, sla.token_count_max])
+                   [input.performance.token_count, sla.token_count_max])
 }
 
 # Metrics for dashboards
 metrics := {
-    "latency_ms": input.evaluations.mlflow.latency_ms,
-    "token_count": input.evaluations.mlflow.token_count,
+    "latency_ms": input.performance.latency_ms,
+    "token_count": input.performance.token_count,
     "latency_within_sla": latency_within_sla,
     "token_efficient": token_efficient
 }
@@ -2381,7 +2366,6 @@ EvaluationAdapter (Abstract Base Class)
 adapters/
 ├── phoenix_adapter.py
 ├── ragas_adapter.py
-├── mlflow_adapter.py
 └── deepeval_adapter.py (existing)
 ```
 
@@ -2539,87 +2523,16 @@ ragas:
 }
 ```
 
-### 6.4 MLflow Adapter Design
-
-**Evaluation Selection:**
-- Answer Correctness (Metric)
-- Token Count (Performance)
-- Latency (Performance)
-- Toxicity Score (Safety)
-
-**Configuration:**
-
-```yaml
-# config/mlflow_adapter.yaml
-mlflow:
-  tracking_uri: "http://mlflow-server:5000"
-  experiment_name: "llm-pipeline-evaluations"
-  timeout_seconds: 5
-
-  evaluations:
-    answer_correctness:
-      enabled: true
-      model: "gpt-4"
-      threshold: 0.90
-
-    token_count:
-      enabled: true
-      alert_threshold: 1500
-
-    latency:
-      enabled: true
-      alert_threshold_ms: 5000
-
-    toxicity:
-      enabled: true
-      api_key: "${PERSPECTIVE_API_KEY}"
-      threshold: 0.10
-```
-
-**Input Format:**
-
-```json
-{
-  "predictions": ["<LLM response JSON as string>"],
-  "targets": ["<ground truth JSON (optional)>"],
-  "metadata": {
-    "model": "claude-sonnet-4-5-20250929",
-    "temperature": 0.25,
-    "tokens_used": 847,
-    "latency_ms": 2341
-  }
-}
-```
-
-**Output Format:**
-
-```json
-{
-  "adapter": "mlflow",
-  "execution_time_ms": 892,
-  "status": "success",
-  "metrics": {
-    "answer_correctness": 0.94,
-    "token_count": 847,
-    "latency_ms": 2341,
-    "toxicity_score": 0.02
-  },
-  "metadata": {
-    "experiment_id": "123",
-    "run_id": "abc456"
-  }
-}
-```
-
-### 6.5 Evaluation Orchestrator
+### 6.4 Evaluation Orchestrator
 
 **Orchestration Strategy:**
 
 ```
 Evaluation Orchestrator
-  ├─ Initialize adapters (Phoenix, Ragas, MLflow)
+  ├─ Initialize adapters (Phoenix, Ragas)
   ├─ Prepare common context (transcript, response)
   ├─ Execute adapters in parallel (asyncio)
+  ├─ Calculate performance metrics directly (token count, latency)
   ├─ Collect results with timeout handling
   ├─ Aggregate metrics
   └─ Return normalized results
@@ -2648,8 +2561,8 @@ orchestrator:
 ```json
 {
   "orchestrator_status": "success",
-  "adapters_executed": ["phoenix", "ragas", "mlflow"],
-  "adapters_succeeded": ["phoenix", "ragas", "mlflow"],
+  "adapters_executed": ["phoenix", "ragas"],
+  "adapters_succeeded": ["phoenix", "ragas"],
   "adapters_failed": [],
   "execution_time_ms": 1847,
 
@@ -2664,13 +2577,13 @@ orchestrator:
       "context_precision": 0.91,
       "context_recall": 0.87,
       "response_relevancy": 0.93
-    },
-    "mlflow": {
-      "answer_correctness": 0.94,
-      "token_count": 847,
-      "latency_ms": 2341,
-      "toxicity_score": 0.02
     }
+  },
+
+  "performance": {
+    "token_count": 847,
+    "latency_ms": 2341,
+    "cost": 0.089
   },
 
   "aggregate_confidence": 0.91,
@@ -2831,13 +2744,13 @@ evaluation_results:
     error: "Evaluation exceeded 5s timeout"
     metrics_available: {}
 
-  mlflow:
-    status: "success"
-    answer_correctness: 0.94
+  performance:
+    token_count: 847
     latency_ms: 2341
+    cost: 0.089
 
 # OPA Policy Adjustment:
-# - Use Phoenix + MLflow metrics only
+# - Use Phoenix metrics only
 # - Reduce confidence threshold to account for missing Ragas metrics
 # - Add warning: "Partial evaluation results - Ragas metrics unavailable"
 # - Decision: WARN (proceed with lower confidence)
@@ -2847,10 +2760,10 @@ evaluation_results:
 
 ```
 Standard Confidence (all adapters):
-  = (Phoenix * 0.40) + (Ragas * 0.40) + (MLflow * 0.20)
+  = (Phoenix * 0.40) + (Ragas * 0.60)
 
 Adjusted Confidence (Ragas timeout):
-  = (Phoenix * 0.60) + (MLflow * 0.30) + (fallback_adjustment: -0.10)
+  = (Phoenix * 1.0) + (fallback_adjustment: -0.15)
 
 Threshold Adjustment:
   Standard threshold: 0.85
@@ -2936,7 +2849,7 @@ request.llm_pipeline (Parent Span)
 ├── evaluation.orchestrate (Parent of evaluations)
 │   ├── evaluation.phoenix
 │   ├── evaluation.ragas
-│   └── evaluation.mlflow
+│   └── performance
 ├── opa.policy_validation
 │   ├── opa.load_policies
 │   ├── opa.execute_confidence_threshold
@@ -2966,8 +2879,8 @@ attributes:
   evaluation.phoenix.latency_ms: 1234
   evaluation.ragas.status: "success"
   evaluation.ragas.latency_ms: 1567
-  evaluation.mlflow.status: "success"
-  evaluation.mlflow.latency_ms: 892
+  performance.status: "success"
+  performance.latency_ms: 892
 
   opa.decision: "allow"
   opa.confidence_score: 0.91
@@ -3023,7 +2936,7 @@ llm_latency_seconds{model="claude-sonnet-4-5"}
 **Evaluation Metrics:**
 ```
 # Histogram: Evaluation scores
-evaluation_score{framework="phoenix|ragas|mlflow", metric="<metric_name>"}
+evaluation_score{framework="phoenix|ragas", metric="<metric_name>"}
 
 # Counter: Evaluation failures
 evaluation_failures_total{framework="<framework>", reason="timeout|error"}
@@ -3249,7 +3162,6 @@ alerts:
 │  ┌────────────────────────────────────────────────────┐   │
 │  │  Phoenix:  ✓ 99.2% success   Avg: 1.2s             │   │
 │  │  Ragas:    ✓ 98.5% success   Avg: 1.6s             │   │
-│  │  MLflow:   ✓ 99.8% success   Avg: 0.9s             │   │
 │  └────────────────────────────────────────────────────┘   │
 │                                                              │
 │  Token Usage & Cost                                         │
