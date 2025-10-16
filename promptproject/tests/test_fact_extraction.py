@@ -29,8 +29,12 @@ from deepeval.test_case import LLMTestCase
 from jsonschema import validate, ValidationError
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
+import warnings
 
-# Initialize Presidio for PII detection
+# Suppress Presidio language warnings for recognizers we don't use
+warnings.filterwarnings('ignore', message='.*Recognizer not added to registry.*', category=UserWarning, module='presidio_analyzer')
+
+# Initialize Presidio for PII detection with English language support
 analyzer = AnalyzerEngine()
 anonymizer = AnonymizerEngine()
 
