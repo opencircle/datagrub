@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-10-16T15:24:25.955353",
+  "schema_validation": {
+    "conversation_input.json": {
+      "valid": true,
+      "file": "/Users/rohitiyer/datagrub/promptproject/schemas/conversation_input.json"
+    },
+    "fact_extraction_output.json": {
+      "valid": true,
+      "file": "/Users/rohitiyer/datagrub/promptproject/schemas/fact_extraction_output.json"
+    },
+    "fact_extraction.yaml": {
+      "valid": true,
+      "missing_fields": []
+    }
+  },
+  "guardrails_validation": {
+    "status": "PASSED",
+    "pii_detection_enabled": true,
+    "schema_enforcement_enabled": true
+  },
+  "deepeval_tests": {
+    "status": "PASSED",
+    "test_count": 0,
+    "results": {}
+  },
+  "policy_compliance": {
+    "status": "NON_COMPLIANT",
+    "gates": {
+      "adversarial_security": {
+        "required_pass_rate": 1.0,
+        "actual_pass_rate": null,
+        "compliant": false,
+        "message": "No tests executed"
+      },
+      "pii_detection": {
+        "required_pass_rate": 1.0,
+        "actual_pass_rate": null,
+        "compliant": false,
+        "message": "No tests executed"
+      }
+    }
+  },
+  "overall_status": "FAILED"
+}

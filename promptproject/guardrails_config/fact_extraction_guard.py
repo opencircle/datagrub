@@ -3,46 +3,124 @@ Guardrails AI Configuration for Fact Extraction
 Demonstrates: Schema validation, PII detection, custom validators
 
 Requirements:
-    pip install guardrails-ai presidio-analyzer presidio-anonymizer
+    pip install guardrails-ai presidio-analyzer presidio-anonymizer pydantic
 
 Usage:
-    from guardrails.fact_extraction_guard import FactExtractionGuard
+    from guardrails_config.fact_extraction_guard import FactExtractionGuard
 
     guard = FactExtractionGuard()
     result = guard.validate(llm_output, context)
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import json
-from guardrails import Guard, OnFailAction
-from guardrails.validators import (
-    ValidRange,
-    ValidChoices,
-    ValidLength,
-    RegexMatch
-)
+from pydantic import BaseModel, Field, field_validator
+from guardrails import Guard, register_validator
+from guardrails.validator_base import Validator, ValidationResult, ErrorSpan
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 
 
-class PIIValidator:
+# Define Pydantic models for output schema
+class Dependent(BaseModel):
+    """Dependent information"""
+    age: int = Field(ge=0, le=100, description="Dependent's age")
+    relationship: str = Field(
+        description="Relationship to client",
+        pattern="^(child|spouse|parent|other)$"
+    )
+
+
+class ClientDemographics(BaseModel):
+    """Client demographic information"""
+    client_age: Optional[int] = Field(None, ge=18, le=120, description="Client's age")
+    employment_status: Optional[str] = Field(
+        None,
+        description="Employment status",
+        pattern="^(employed|retired|unemployed|self_employed)$"
+    )
+    dependents: List[Dependent] = Field(default_factory=list, description="List of dependents")
+
+
+class FinancialGoals(BaseModel):
+    """Financial goals and retirement planning"""
+    retirement_age: Optional[int] = Field(None, ge=40, le=90, description="Target retirement age")
+    retirement_timeline_years: Optional[int] = Field(None, ge=0, le=50, description="Years until retirement")
+    financial_goals: List[str] = Field(default_factory=list, description="List of financial goals")
+
+
+class FinancialSituation(BaseModel):
+    """Current financial situation"""
+    current_portfolio_value: Optional[float] = Field(None, ge=0, description="Current portfolio value")
+    annual_income: Optional[float] = Field(None, ge=0, description="Annual income")
+    emergency_fund_months: Optional[int] = Field(None, ge=0, le=24, description="Months of emergency fund")
+
+
+class RiskProfile(BaseModel):
+    """Risk tolerance profile"""
+    risk_tolerance: str = Field(
+        description="Risk tolerance level",
+        pattern="^(conservative|moderate|aggressive|conflicting)$"
+    )
+    risk_tolerance_confidence: Optional[float] = Field(
+        None,
+        ge=0,
+        le=1,
+        description="Confidence in risk tolerance assessment"
+    )
+
+
+class ComplianceMarkers(BaseModel):
+    """Compliance and regulatory markers"""
+    suitability_factors_discussed: bool = Field(description="Whether suitability factors were discussed")
+    investment_objectives_documented: bool = Field(description="Whether investment objectives were documented")
+    disclosures_made: List[str] = Field(default_factory=list, description="List of disclosures made")
+
+
+class FactExtractionOutput(BaseModel):
+    """Complete fact extraction output schema"""
+    conversation_id: Optional[str] = Field(None, description="Conversation identifier")
+    extraction_timestamp: Optional[str] = Field(None, description="Timestamp of extraction")
+    client_demographics: ClientDemographics = Field(default_factory=ClientDemographics)
+    financial_goals: FinancialGoals = Field(default_factory=FinancialGoals)
+    financial_situation: FinancialSituation = Field(default_factory=FinancialSituation)
+    risk_profile: RiskProfile
+    compliance_markers: ComplianceMarkers
+
+
+# Custom Validator for PII Detection
+@register_validator(name="pii_detection", data_type="string")
+class PIIDetectionValidator(Validator):
     """Custom Guardrails validator for PII detection using Presidio"""
 
-    def __init__(self):
+    def __init__(
+        self,
+        entities: List[str] = None,
+        on_fail: str = "exception",
+        **kwargs
+    ):
+        super().__init__(on_fail=on_fail, **kwargs)
+        self.entities = entities or [
+            "PHONE_NUMBER", "US_SSN", "CREDIT_CARD",
+            "US_BANK_NUMBER", "EMAIL_ADDRESS"
+        ]
         self.analyzer = AnalyzerEngine()
         self.anonymizer = AnonymizerEngine()
 
-    def validate(self, value: str, metadata: Dict) -> Dict:
+    def validate(self, value: Any, metadata: Dict = None) -> ValidationResult:
         """
         Detect PII entities in the output
 
         Returns:
-            Dict with validation results
+            ValidationResult with pass/fail status
         """
+        if not isinstance(value, str):
+            value = json.dumps(value)
+
         # Analyze for PII
         results = self.analyzer.analyze(
             text=value,
-            entities=["PHONE_NUMBER", "US_SSN", "CREDIT_CARD", "US_BANK_NUMBER", "EMAIL_ADDRESS"],
+            entities=self.entities,
             language="en"
         )
 
@@ -53,13 +131,48 @@ class PIIValidator:
                 for r in results
             ]
 
-            return {
-                "outcome": "fail",
-                "error_message": f"PII detected in output: {pii_summary}",
-                "fix_value": self.anonymizer.anonymize(text=value, analyzer_results=results).text
-            }
+            # Create error spans for detected PII
+            error_spans = [
+                ErrorSpan(
+                    start=r.start,
+                    end=r.end,
+                    reason=f"PII detected: {r.entity_type} (confidence: {r.score:.2f})"
+                )
+                for r in results
+            ]
 
-        return {"outcome": "pass"}
+            return ValidationResult(
+                outcome="fail",
+                error_message=f"PII detected in output: {pii_summary}",
+                fix_value=self.anonymizer.anonymize(text=value, analyzer_results=results).text,
+                error_spans=error_spans
+            )
+
+        return ValidationResult(outcome="pass")
+
+
+# Custom Validator for Business Logic
+@register_validator(name="retirement_age_logic", data_type="object")
+class RetirementAgeLogicValidator(Validator):
+    """Validates retirement age is greater than current age"""
+
+    def validate(self, value: Any, metadata: Dict = None) -> ValidationResult:
+        """Validate business logic for retirement planning"""
+
+        if not isinstance(value, dict):
+            return ValidationResult(outcome="pass")
+
+        client_age = value.get("client_demographics", {}).get("client_age")
+        retirement_age = value.get("financial_goals", {}).get("retirement_age")
+
+        if client_age and retirement_age:
+            if retirement_age <= client_age:
+                return ValidationResult(
+                    outcome="fail",
+                    error_message=f"Retirement age ({retirement_age}) must be greater than current age ({client_age})"
+                )
+
+        return ValidationResult(outcome="pass")
 
 
 class FactExtractionGuard:
@@ -69,120 +182,22 @@ class FactExtractionGuard:
     """
 
     def __init__(self):
-        self.pii_validator = PIIValidator()
+        self.pii_validator = PIIDetectionValidator()
+        self.retirement_validator = RetirementAgeLogicValidator()
         self.guard = self._build_guard()
 
     def _build_guard(self) -> Guard:
         """
-        Build Guardrails Guard with all validators
+        Build Guardrails Guard with Pydantic model and validators
         """
+        # Create Guard with Pydantic model
+        guard = Guard.from_pydantic(
+            output_class=FactExtractionOutput
+        )
 
-        # Define the Guardrails RAIL spec
-        rail_spec = """
-<rail version="0.1">
-
-<output>
-    <object name="fact_extraction_output">
-        <!-- Client Demographics -->
-        <object name="client_demographics">
-            <integer
-                name="client_age"
-                validators="valid-range: min=18 max=120"
-                on-fail-valid-range="reask"
-                required="false"
-            />
-            <string
-                name="employment_status"
-                validators="valid-choices: choices=['employed', 'retired', 'unemployed', 'self_employed']"
-                on-fail-valid-choices="reask"
-                required="false"
-            />
-            <list name="dependents">
-                <object>
-                    <integer
-                        name="age"
-                        validators="valid-range: min=0 max=100"
-                        on-fail-valid-range="fix"
-                    />
-                    <string
-                        name="relationship"
-                        validators="valid-choices: choices=['child', 'spouse', 'parent', 'other']"
-                        on-fail-valid-choices="fix"
-                    />
-                </object>
-            </list>
-        </object>
-
-        <!-- Financial Goals -->
-        <object name="financial_goals">
-            <integer
-                name="retirement_age"
-                validators="valid-range: min=40 max=90"
-                on-fail-valid-range="reask"
-                required="false"
-            />
-            <integer
-                name="retirement_timeline_years"
-                validators="valid-range: min=0 max=50"
-                on-fail-valid-range="fix"
-                required="false"
-            />
-            <list name="financial_goals">
-                <string
-                    validators="valid-length: min=5 max=500"
-                    on-fail-valid-length="reask"
-                />
-            </list>
-        </object>
-
-        <!-- Financial Situation -->
-        <object name="financial_situation">
-            <float
-                name="current_portfolio_value"
-                validators="valid-range: min=0"
-                on-fail-valid-range="exception"
-                required="false"
-            />
-            <float
-                name="annual_income"
-                validators="valid-range: min=0"
-                on-fail-valid-range="exception"
-                required="false"
-            />
-        </object>
-
-        <!-- Risk Profile -->
-        <object name="risk_profile" required="true">
-            <string
-                name="risk_tolerance"
-                validators="valid-choices: choices=['conservative', 'moderate', 'aggressive', 'conflicting']"
-                on-fail-valid-choices="reask"
-                required="true"
-            />
-            <float
-                name="risk_tolerance_confidence"
-                validators="valid-range: min=0 max=1"
-                on-fail-valid-range="fix"
-                required="false"
-            />
-        </object>
-
-        <!-- Compliance Markers -->
-        <object name="compliance_markers" required="true">
-            <bool name="suitability_factors_discussed" required="true" />
-            <bool name="investment_objectives_documented" required="true" />
-            <list name="disclosures_made">
-                <string validators="valid-length: max=200" />
-            </list>
-        </object>
-    </object>
-</output>
-
-</rail>
-"""
-
-        # Create Guard from RAIL spec
-        guard = Guard.from_rail_string(rail_spec)
+        # Add custom validators
+        guard.use(self.pii_validator)
+        guard.use(self.retirement_validator)
 
         return guard
 
@@ -218,30 +233,25 @@ class FactExtractionGuard:
             })
             return results
 
-        # Step 2: Check for PII leakage
-        pii_check = self.pii_validator.validate(llm_output, {})
-        if pii_check["outcome"] == "fail":
-            results["valid"] = False
-            results["pii_detected"] = True
-            results["errors"].append({
-                "type": "pii_leakage",
-                "message": pii_check["error_message"],
-                "fix": pii_check["fix_value"]
-            })
-
-        # Step 3: Schema and value validation using Guardrails
+        # Step 2: Validate with Guardrails Guard
         try:
-            validated = self.guard.validate(parsed_output)
+            # Guard.parse expects the raw LLM output string
+            validated = self.guard.parse(llm_output)
 
             if validated.validation_passed:
                 results["validated_output"] = validated.validated_output
             else:
                 results["valid"] = False
+
+                # Check for PII detection failures
+                if validated.error and "PII detected" in str(validated.error):
+                    results["pii_detected"] = True
+
                 results["schema_valid"] = False
                 results["errors"].append({
-                    "type": "schema_validation_error",
-                    "message": "Output failed schema validation",
-                    "details": validated.error
+                    "type": "validation_error",
+                    "message": "Output failed validation",
+                    "details": str(validated.error) if validated.error else "Unknown error"
                 })
 
         except Exception as e:
@@ -252,10 +262,10 @@ class FactExtractionGuard:
                 "message": str(e)
             })
 
-        # Step 4: Business logic validation
+        # Step 3: Business logic validation
         if results["valid"]:
             business_validation = self._validate_business_logic(parsed_output, context)
-            if not business_validation["valid"]:
+            if business_validation["warnings"]:
                 results["warnings"].extend(business_validation["warnings"])
 
         return results
@@ -273,24 +283,13 @@ class FactExtractionGuard:
         """
         warnings = []
 
-        # Rule 1: Retirement age should be > current age
-        if output.get("client_demographics", {}).get("client_age") and \
-           output.get("financial_goals", {}).get("retirement_age"):
-
-            client_age = output["client_demographics"]["client_age"]
-            retirement_age = output["financial_goals"]["retirement_age"]
-
-            if retirement_age <= client_age:
-                warnings.append({
-                    "type": "business_logic_warning",
-                    "message": f"Retirement age ({retirement_age}) should be greater than current age ({client_age})"
-                })
-
-        # Rule 2: Retirement timeline should match age difference
+        # Rule 1: Retirement timeline should match age difference
         if output.get("client_demographics", {}).get("client_age") and \
            output.get("financial_goals", {}).get("retirement_age") and \
            output.get("financial_goals", {}).get("retirement_timeline_years"):
 
+            client_age = output["client_demographics"]["client_age"]
+            retirement_age = output["financial_goals"]["retirement_age"]
             expected_timeline = retirement_age - client_age
             stated_timeline = output["financial_goals"]["retirement_timeline_years"]
 
@@ -300,7 +299,7 @@ class FactExtractionGuard:
                     "message": f"Retirement timeline ({stated_timeline} years) doesn't match age difference ({expected_timeline} years)"
                 })
 
-        # Rule 3: Conservative risk + aggressive goals = warning
+        # Rule 2: Conservative risk + aggressive goals = warning
         if output.get("risk_profile", {}).get("risk_tolerance") == "conservative" and \
            output.get("financial_goals", {}).get("retirement_timeline_years", 100) < 10:
 
@@ -309,7 +308,7 @@ class FactExtractionGuard:
                 "message": "Client has conservative risk tolerance but short timeline to retirement - may need planning discussion"
             })
 
-        # Rule 4: High portfolio value with no emergency fund = warning
+        # Rule 3: High portfolio value with no emergency fund = warning
         if output.get("financial_situation", {}).get("current_portfolio_value", 0) > 1000000 and \
            output.get("financial_situation", {}).get("emergency_fund_months") is None:
 
@@ -388,7 +387,7 @@ def example_usage():
         "conversation_id": "conv_abc123def4567890",
         "client_demographics": {
             "client_age": 52,
-            "client_name_anonymized": "SSN: 123-45-6789"  # PII leakage!
+            "client_name": "SSN: 123-45-6789"  # PII leakage!
         },
         "financial_goals": {},
         "financial_situation": {},

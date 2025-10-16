@@ -30,7 +30,7 @@ promptproject/
 │   └── test_fact_extraction.py  # Golden/Edge/Adversarial tests
 ├── policies/                    # Evaluation policies
 │   └── evaluation_policy.yaml   # Success criteria and quality gates
-├── guardrails/                  # Guardrails AI configurations
+├── guardrails_config/           # Guardrails AI configurations
 │   └── fact_extraction_guard.py # Runtime validation with Presidio
 └── scripts/                     # Build and validation scripts
     └── validate_prompts.py      # Orchestrates full validation pipeline
@@ -116,7 +116,7 @@ pytest tests/test_fact_extraction.py -v -k "policy"
 
 ```bash
 # Run Guardrails example
-python guardrails/fact_extraction_guard.py
+python guardrails_config/fact_extraction_guard.py
 ```
 
 ## Key Concepts Demonstrated
@@ -295,7 +295,7 @@ def test_regression_golden_dataset_baseline(evaluator):
 
 Integrated throughout the pipeline:
 
-**In Guardrails (guardrails/fact_extraction_guard.py):**
+**In Guardrails (guardrails_config/fact_extraction_guard.py):**
 ```python
 class PIIValidator:
     def __init__(self):
@@ -361,7 +361,7 @@ def _validate_business_logic(self, output: Dict) -> Dict:
 
 **Usage in Production:**
 ```python
-from guardrails.fact_extraction_guard import FactExtractionGuard
+from guardrails_config.fact_extraction_guard import FactExtractionGuard
 
 guard = FactExtractionGuard()
 llm_output = call_llm(transcript)
@@ -655,7 +655,7 @@ DEPLOYMENT BLOCKED
 ### To Extend This Reference Implementation:
 1. **Add new prompt**: Create YAML in `prompts/`, add tests, update policy
 2. **Add new evaluation metric**: Update `evaluations` in YAML, add to tests
-3. **Add custom Guardrails validator**: Extend `guardrails/fact_extraction_guard.py`
+3. **Add custom Guardrails validator**: Extend `guardrails_config/fact_extraction_guard.py`
 4. **Integrate with CI/CD**: Use provided GitHub Actions template
 
 ### To Adapt for Your Use Case:
