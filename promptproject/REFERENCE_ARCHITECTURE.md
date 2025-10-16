@@ -3825,54 +3825,106 @@ Step 4: Production A/B Testing
 #### Phase 1 (Current):
 ```
 Assumptions:
-- 10,000 requests/day
-- 300,000 requests/month
+- 1,000 requests/day
+- 20 working days/month
+- 20,000 total requests/month
 - 20% fallback rate (no evaluation cost for schema conversion failures)
+- 16,000 successful requests requiring evaluation
 
-Breakdown:
-- LLM Invocations: $16,500 (300k * $0.055)
-- DeepEval Evaluations: $4,800 (240k successful * $0.020)
-- Infrastructure: $500 (K8s, OPA, monitoring)
+Runtime Costs (Variable):
+- LLM Invocations: $1,100 (20k requests * $0.055)
+  └─ Schema Conversion: $100 (20k * $0.005)
+  └─ Fact Extraction: $1,000 (20k * $0.050)
+- DeepEval Evaluations: $320 (16k successful * $0.020)
+- Guardrails Validation: $16 (16k * $0.001)
+- OPA Policy Validation: $16 (16k * $0.001)
 
-Total Monthly Cost: $21,800
-Cost per Request: $0.077
+Subtotal Runtime: $1,452
+
+Fixed Costs (Monthly):
+- Infrastructure: $500
+  └─ Kubernetes cluster (minimal)
+  └─ OPA sidecar deployment
+  └─ Monitoring stack (Prometheus + Grafana)
+  └─ Log aggregation
+
+Subtotal Fixed: $500
+
+Total Monthly Cost: $1,952
+Average Cost per Request: $0.098 ($1,952 / 20,000)
+Runtime Cost per Request: $0.073 ($1,452 / 20,000)
 ```
 
-#### Phase 2 (DeepEval + Ragas):
+#### Phase 2 (DeepEval + Ragas - Recommended):
 ```
 Assumptions:
-- 10,000 requests/day
-- 300,000 requests/month
+- 1,000 requests/day
+- 20 working days/month
+- 20,000 total requests/month
 - 20% fallback rate
+- 16,000 successful requests requiring evaluation
 
-Breakdown:
-- LLM Invocations: $16,500 (300k * $0.055)
-- DeepEval Evaluations: $4,800 (240k * $0.020)
-- Ragas Evaluations: $2,880 (240k * $0.012)
-- Infrastructure: $500 (K8s, OPA, monitoring)
+Runtime Costs (Variable):
+- LLM Invocations: $1,100 (20k requests * $0.055)
+  └─ Schema Conversion: $100 (20k * $0.005)
+  └─ Fact Extraction: $1,000 (20k * $0.050)
+- DeepEval Evaluations: $320 (16k successful * $0.020)
+- Ragas Evaluations: $192 (16k successful * $0.012)
+- Guardrails Validation: $16 (16k * $0.001)
+- OPA Policy Validation: $16 (16k * $0.001)
 
-Total Monthly Cost: $24,680
-Cost per Request: $0.089
-Additional Cost vs Phase 1: +$2,880/month (+13%)
+Subtotal Runtime: $1,644
+
+Fixed Costs (Monthly):
+- Infrastructure: $500
+  └─ Kubernetes cluster (minimal)
+  └─ OPA sidecar deployment
+  └─ Monitoring stack (Prometheus + Grafana)
+  └─ Log aggregation
+
+Subtotal Fixed: $500
+
+Total Monthly Cost: $2,144
+Average Cost per Request: $0.107 ($2,144 / 20,000)
+Runtime Cost per Request: $0.082 ($1,644 / 20,000)
+Additional Cost vs Phase 1: +$192/month (+10%)
 ```
 
 #### Phase 4 (Full Multi-Framework - Optional):
 ```
 Assumptions:
-- 10,000 requests/day
-- 300,000 requests/month
+- 1,000 requests/day
+- 20 working days/month
+- 20,000 total requests/month
 - 20% fallback rate
+- 16,000 successful requests requiring evaluation
 
-Breakdown:
-- LLM Invocations: $16,500 (300k * $0.055)
-- DeepEval Evaluations: $4,800 (240k * $0.020)
-- Ragas Evaluations: $2,880 (240k * $0.012)
-- Phoenix Evaluations: $3,600 (240k * $0.015)
-- Infrastructure: $500 (K8s, OPA, monitoring)
+Runtime Costs (Variable):
+- LLM Invocations: $1,100 (20k requests * $0.055)
+  └─ Schema Conversion: $100 (20k * $0.005)
+  └─ Fact Extraction: $1,000 (20k * $0.050)
+- DeepEval Evaluations: $320 (16k successful * $0.020)
+- Ragas Evaluations: $192 (16k successful * $0.012)
+- Phoenix Evaluations: $240 (16k successful * $0.015)
+- Guardrails Validation: $16 (16k * $0.001)
+- OPA Policy Validation: $16 (16k * $0.001)
 
-Total Monthly Cost: $28,280
-Cost per Request: $0.104
-Additional Cost vs Phase 2: +$3,600/month (+15%)
+Subtotal Runtime: $1,884
+
+Fixed Costs (Monthly):
+- Infrastructure: $500
+  └─ Kubernetes cluster (minimal)
+  └─ OPA sidecar deployment
+  └─ Monitoring stack (Prometheus + Grafana)
+  └─ Log aggregation
+  └─ Arize Phoenix platform subscription
+
+Subtotal Fixed: $500
+
+Total Monthly Cost: $2,384
+Average Cost per Request: $0.119 ($2,384 / 20,000)
+Runtime Cost per Request: $0.094 ($1,884 / 20,000)
+Additional Cost vs Phase 2: +$240/month (+11%)
 ```
 
 ---
@@ -3881,41 +3933,65 @@ Additional Cost vs Phase 2: +$3,600/month (+15%)
 
 1. **Evaluation Caching (60s TTL):**
    - Cache evaluation results for identical inputs
-   - Expected savings: 20% reduction in evaluation costs
-   - Phase 1: $0.077 → $0.073/request
-   - Phase 2: $0.089 → $0.083/request
+   - Expected savings: 20% reduction in evaluation costs only
+   - Phase 1: Saves $64/month on evaluations ($320 * 0.20)
+     - Monthly: $1,952 → $1,888
+     - Per request: $0.098 → $0.094
+   - Phase 2: Saves $102/month on evaluations ($512 * 0.20)
+     - Monthly: $2,144 → $2,042
+     - Per request: $0.107 → $0.102
 
 2. **Selective Evaluation (Confidence-based):**
    - Run full evaluation suite only when Guardrails flags concerns
    - Run lightweight checks (DeepEval only) for high-confidence cases
-   - Expected savings: 15% reduction
-   - Phase 2: $0.089 → $0.076/request
+   - Expected savings: 30% reduction in Ragas costs (applies to ~30% of requests)
+   - Phase 2: Saves $58/month on Ragas ($192 * 0.30)
+     - Monthly: $2,144 → $2,086
+     - Per request: $0.107 → $0.104
 
 3. **Model Optimization:**
    - Use GPT-4o-mini for non-critical evaluations (Bias, Relevancy)
    - Keep GPT-4 for critical metrics (Faithfulness, Hallucination)
-   - Expected savings: 25% reduction in evaluation costs
-   - Phase 2: $0.089 → $0.081/request
+   - Expected savings: 40% reduction in non-critical evaluation costs
+   - Phase 2: Saves ~$102/month on evaluations
+     - Monthly: $2,144 → $2,042
+     - Per request: $0.107 → $0.102
 
 4. **Batch Processing:**
    - Batch multiple requests for evaluation (where latency allows)
    - Expected savings: 10% reduction in API overhead
-   - Phase 2: $0.089 → $0.085/request
+   - Phase 2: Saves ~$51/month
+     - Monthly: $2,144 → $2,093
+     - Per request: $0.107 → $0.105
 
 **Combined Optimization (Phase 2):**
-- Base cost: $0.089/request
-- With caching + selective eval + model optimization: $0.068/request
-- **Target cost: < $0.10 per request ✅**
+- Base monthly cost: $2,144
+- Fixed costs (cannot optimize): $500
+- Runtime costs: $1,644
+- Optimized runtime: $1,644 - $205 (caching + selective + model opt) = $1,439
+- **Optimized monthly: $1,939**
+- **Optimized per request: $0.097**
+- Savings: $205/month (10% reduction)
 
 **Cost Comparison Summary:**
 
-| Phase | Base Cost | Optimized Cost | Monthly (10k/day) |
-|-------|-----------|----------------|-------------------|
-| **Phase 1 (Current)** | $0.077 | $0.065 | $19,500 |
-| **Phase 2 (Recommended)** | $0.089 | $0.068 | $20,400 |
-| **Phase 4 (Optional)** | $0.104 | $0.078 | $23,400 |
+| Phase | Fixed/Month | Runtime/Month | Total/Month | Per Request | Optimized/Req |
+|-------|-------------|---------------|-------------|-------------|---------------|
+| **Phase 1 (Current)** | $500 | $1,452 | $1,952 | $0.098 | $0.089 |
+| **Phase 2 (Recommended)** | $500 | $1,644 | $2,144 | $0.107 | $0.097 |
+| **Phase 4 (Optional)** | $500 | $1,884 | $2,384 | $0.119 | $0.106 |
 
-**Recommendation:** Phase 2 (DeepEval + Ragas) provides best balance of quality and cost. Phoenix (Phase 4) only if hallucination detection gaps identified.
+**Volume-Based Cost Breakdown:**
+
+| Requests/Month | Phase 1 Total | Phase 2 Total | Phase 4 Total |
+|----------------|---------------|---------------|---------------|
+| **20,000 (1k/day × 20 days)** | $1,952 | $2,144 | $2,384 |
+| **40,000 (2k/day × 20 days)** | $3,404 | $3,788 | $4,268 |
+| **60,000 (3k/day × 20 days)** | $4,856 | $5,432 | $6,152 |
+
+*Note: Fixed costs ($500) remain constant; runtime costs scale linearly with volume*
+
+**Recommendation:** Phase 2 (DeepEval + Ragas) provides best balance of quality and cost. With 20,000 requests/month, total cost is $2,144/month ($0.107/request). Phoenix (Phase 4) only if hallucination detection gaps identified.
 
 ---
 
