@@ -58,6 +58,8 @@ pip install \
 
 # Set up API key
 export ANTHROPIC_API_KEY="your-api-key"
+# for deepval-faithfulness check
+export OPENAI_API_KEY="your-openai-key"
 ```
 
 #### Why These Dependencies?

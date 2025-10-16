@@ -146,7 +146,7 @@
             "properties": {
               "type": {
                 "type": "string",
-                "enum": ["mortgage", "student_loan", "credit_card", "auto_loan", "personal_loan", "other"]
+                "enum": ["mortgage", "student_loan", "student loan", "credit_card", "credit card", "auto_loan", "auto loan", "car_loan", "car loan", "personal_loan", "personal loan", "other"]
               },
               "amount": {
                 "type": "number",
