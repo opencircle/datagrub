@@ -782,7 +782,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ##### 2. **MLflow** (18 evaluations)
 
-**Focus:** General-purpose ML evaluation metrics and readability assessment
+**Focus:** Experiment tracking and ML model registry (NOT recommended for runtime evaluation)
 
 **Coverage by Category:**
 - Quality: 14 METRIC + 1 VALIDATOR
@@ -799,7 +799,18 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 **Adapter:** `MLflowAdapter`
 
-**Best For:** Production monitoring, cost tracking, readability assessment, performance benchmarking
+**Why NOT for Runtime Evaluation:**
+- Requires MLflow tracking server (operational overhead and infrastructure complexity)
+- Performance metrics (token count, latency, cost) should be calculated directly in application code
+- Better suited for offline experiment tracking, A/B test comparison, and model versioning
+- Adds unnecessary complexity and latency to real-time LLM pipelines
+
+**Alternative Approach:**
+- **Use MLflow for:** Offline experiment tracking, prompt variant comparison, baseline A/B testing, model registry
+- **Calculate directly:** Token count, latency, cost (no adapter needed - simple in-process calculation)
+- **Runtime evaluation:** Use DeepEval (Phase 1), Ragas (Phase 2), or Phoenix (Phase 4) instead
+
+**Best For:** Offline experiment tracking, A/B test result storage, baseline comparison archives (NOT production runtime evaluation)
 
 ---
 
@@ -984,11 +995,31 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ---
 
-**Recommended Evaluation Stack:**
-- **Primary:** Ragas (comprehensive RAG/NLP coverage)
-- **Secondary:** PromptForge (platform-native monitoring)
-- **Compliance:** Deepchecks (PII, hallucination, bias detection)
-- **Performance:** MLflow (latency, cost, token tracking)
+**Recommended Evaluation Stack (Phased Approach):**
+
+**Phase 1 (Current - Production):** DeepEval-First Architecture
+- **Primary Runtime Evaluation:** DeepEval (pytest-integrated, 18/18 tests passing in promptproject)
+- **Safety & Compliance:** Guardrails AI + Presidio (PII detection, schema validation)
+- **Performance Metrics:** Direct calculation (no adapter - token count, latency, cost in-process)
+- **Policy Enforcement:** OPA-based 4-tier quality gates (YAML-driven)
+
+**Phase 2 (Next Priority):** Ragas Integration
+- **Add:** Ragas adapter for enhanced RAG/NLP evaluation
+- **Metrics:** Context Precision, Context Recall, Faithfulness (23 evaluations total)
+- **Use Case:** Multi-document retrieval, advanced agent workflows
+- **Keep:** DeepEval for core testing, Guardrails for safety
+
+**Phase 4 (Optional/Advanced):** Phoenix Observability
+- **Add:** Arize Phoenix for production tracing and drift detection
+- **Metrics:** Q&A quality, hallucination detection, code generation eval (16 evaluations)
+- **Use Case:** Production observability, A/B testing, model performance tracking
+- **Keep:** DeepEval + Ragas for evaluation, Guardrails for safety
+
+**NOT Recommended for Runtime Evaluation:**
+- ❌ **MLflow:** Use ONLY for offline experiment tracking, baseline comparison, A/B test archives
+  - Requires tracking server (operational overhead)
+  - Performance metrics (token, latency, cost) should be calculated directly
+  - Better suited for ML model registry, not real-time LLM pipelines
 
 ### 3.2.1 Reference Implementation: `/promptproject`
 
@@ -1002,6 +1033,26 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 - **Presidio** - PII detection and anonymization (Microsoft)
 - **JSON Schema** - Input/output validation
 - **YAML** - Prompt specifications and policy definitions
+
+**Current Status (as of 2025-10-16):**
+- **Test Results:** 18/18 tests passing (100% pass rate)
+- **Overall Status:** PASSED
+- **Schema Validation:** ✅ All schemas valid
+- **Guardrails Validation:** ✅ PII detection and schema enforcement enabled
+- **Policy Compliance:** ✅ COMPLIANT
+  - Adversarial Security: 100% (7/7 tests passed)
+  - PII Detection: 100% (7/7 tests passed - Presidio-validated)
+  - Golden Dataset Accuracy: 100% (3/3 tests passed)
+  - Edge Case Handling: 100% (5/5 tests passed)
+  - Regression Tests: 100% (1/1 tests passed)
+- **Deployment Status:** Production-ready reference implementation
+
+**Test Breakdown by Category:**
+- **Golden Tests:** 3/3 passed (retirement planning, risk tolerance, financial goals extraction)
+- **Edge Tests:** 5/5 passed (incomplete conversations, ambiguous inputs, long conversations, missing info, multiple clients)
+- **Adversarial Tests:** 7/7 passed (prompt injection, PII leakage, unethical advice, output manipulation, extreme values, bias detection)
+- **Policy Tests:** 2/2 passed (compliance factors documented, quality metrics met)
+- **Regression Tests:** 1/1 passed (golden dataset baseline maintained)
 
 **Key Components:**
 
