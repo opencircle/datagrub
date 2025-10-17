@@ -735,24 +735,23 @@ Traditional manual testing is insufficient for production-grade prompt engineeri
 
 ### 3.2 Evaluation Library Ecosystem
 
-The PromptForge platform integrates **93 evaluation metrics** across **6 specialized adapters**, providing comprehensive LLM evaluation capabilities for production systems.
+The evaluation framework integrates **69 evaluation metrics** across **4 specialized adapters**, providing comprehensive LLM evaluation capabilities for production systems.
 
 **Evaluation Distribution:**
-- **Total Active Evaluations:** 93
-- **Vendor-Sourced:** 87 evaluations
-- **Platform-Native:** 6 PromptForge evaluations
+- **Total Active Evaluations:** 69
+- **Vendor-Sourced:** 69 evaluations (Ragas, Arize Phoenix, Deepchecks, DeepEval)
 
 **By Category:**
-- Quality: 71 evaluations (76%)
-- Performance: 11 evaluations (12%)
-- Safety: 7 evaluations (8%)
-- Security: 2 evaluations (2%)
-- Bias: 2 evaluations (2%)
+- Quality: 53 evaluations (77%)
+- Performance: 6 evaluations (9%)
+- Safety: 6 evaluations (9%)
+- Security: 2 evaluations (3%)
+- Bias: 2 evaluations (3%)
 
 **By Type:**
-- Metric (0.0-1.0 scores): 74 evaluations (80%)
-- Classifier (categorization): 12 evaluations (13%)
-- Validator (pass/fail): 7 evaluations (8%)
+- Metric (0.0-1.0 scores): 55 evaluations (80%)
+- Classifier (categorization): 10 evaluations (14%)
+- Validator (pass/fail): 4 evaluations (6%)
 
 ---
 
@@ -780,41 +779,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ---
 
-##### 2. **MLflow** (18 evaluations)
-
-**Focus:** Experiment tracking and ML model registry (NOT recommended for runtime evaluation)
-
-**Coverage by Category:**
-- Quality: 14 METRIC + 1 VALIDATOR
-- Performance: 2 METRIC
-- Safety: 1 METRIC
-
-**Key Evaluations:**
-- **Answer Correctness** (Quality/Metric) - Evaluates semantic correctness of generated answers
-- **Faithfulness** (Quality/Metric) - Checks if answer is faithful to provided context
-- **ROUGE-L** (Quality/Metric) - Longest common subsequence between generated and reference text
-- **Token Count** (Performance/Metric) - Counts number of tokens in generated text
-- **Latency** (Performance/Metric) - Measures response time for generation
-- **Toxicity Score** (Safety/Metric) - Measures toxicity level using Perspective API
-
-**Adapter:** `MLflowAdapter`
-
-**Why NOT for Runtime Evaluation:**
-- Requires MLflow tracking server (operational overhead and infrastructure complexity)
-- Performance metrics (token count, latency, cost) should be calculated directly in application code
-- Better suited for offline experiment tracking, A/B test comparison, and model versioning
-- Adds unnecessary complexity and latency to real-time LLM pipelines
-
-**Alternative Approach:**
-- **Use MLflow for:** Offline experiment tracking, prompt variant comparison, baseline A/B testing, model registry
-- **Calculate directly:** Token count, latency, cost (no adapter needed - simple in-process calculation)
-- **Runtime evaluation:** Use DeepEval (Phase 1), Ragas (Phase 2), or Phoenix (Phase 4) instead
-
-**Best For:** Offline experiment tracking, A/B test result storage, baseline comparison archives (NOT production runtime evaluation)
-
----
-
-##### 3. **Arize Phoenix** (16 evaluations)
+##### 2. **Arize Phoenix** (16 evaluations)
 
 **Focus:** LLM observability, agent evaluation, and specialized use cases
 
@@ -837,7 +802,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ---
 
-##### 4. **Deepchecks** (15 evaluations)
+##### 3. **Deepchecks** (15 evaluations)
 
 **Focus:** Data validation and model monitoring
 
@@ -861,7 +826,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ---
 
-##### 5. **DeepEval** (15 evaluations)
+##### 4. **DeepEval** (15 evaluations)
 
 **Focus:** RAG, agents, chatbots, and safety metrics
 
@@ -886,27 +851,6 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 ---
 
-##### 6. **PromptForge** (6 evaluations) - Platform Native
-
-**Focus:** Platform-specific quality and performance metrics
-
-**Coverage by Category:**
-- Quality: 3 METRIC + 1 VALIDATOR
-- Performance: 2 METRIC + 1 VALIDATOR
-
-**Key Evaluations:**
-- **Prompt Quality Score** (Quality/Metric) - Comprehensive quality assessment of prompt engineering
-- **Response Completeness** (Quality/Metric) - Checks if response fully addresses all input aspects
-- **Cost Efficiency Score** (Performance/Metric) - Evaluates cost-effectiveness vs. target benchmarks
-- **Token Efficiency Score** (Performance/Metric) - Measures efficient token usage relative to output value
-- **Latency Budget Validator** (Performance/Validator) - Validates response latency within SLA bounds
-- **Output Consistency Checker** (Quality/Validator) - Validates output format matches expected structure
-
-**Adapter:** `PromptForgeAdapter`
-
-**Best For:** Platform monitoring, cost optimization, SLA compliance, prompt engineering quality
-
----
 
 #### Recommended Evaluations by Category & Type
 
@@ -914,8 +858,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 | Evaluation | Library | Use Case | Why It's Useful |
 |------------|---------|----------|-----------------|
-| **Faithfulness** | Ragas, MLflow, DeepEval | RAG, Q&A systems | **Most critical for compliance**: Ensures generated content is factually consistent with source material. Essential for regulated industries (finance, healthcare, legal) where hallucinations pose liability risks. Prevents model from fabricating facts not present in retrieved context. |
-| **Answer Correctness** | MLflow | General Q&A, customer support | **Gold standard for accuracy**: Evaluates semantic correctness against ground truth answers. Useful for customer support automation where answer accuracy directly impacts user satisfaction and trust. |
+| **Faithfulness** | Ragas, DeepEval | RAG, Q&A systems | **Most critical for compliance**: Ensures generated content is factually consistent with source material. Essential for regulated industries (finance, healthcare, legal) where hallucinations pose liability risks. Prevents model from fabricating facts not present in retrieved context. |
 | **Semantic Similarity** | Deepchecks, Ragas | Content comparison, paraphrasing | **Nuanced quality measurement**: Uses embeddings to capture meaning beyond word overlap. Critical for evaluating paraphrasing quality, content rewriting, and translation where surface-level metrics fail. |
 | **Summarization Score** | Ragas | Document summarization, meeting notes | **End-to-end summarization quality**: Comprehensive evaluation of summary quality including relevance, conciseness, and coherence. Essential for wealth management call summaries, legal document condensation. |
 
@@ -923,8 +866,7 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 | Evaluation | Library | Use Case | Why It's Useful |
 |------------|---------|----------|-----------------|
-| **Exact Match** | MLflow, Ragas | Structured data extraction, classification | **Binary verification**: Confirms prediction exactly matches expected output. Critical for regulatory compliance checks, data extraction validation, and quality gates where approximate matches are insufficient. |
-| **Output Consistency Checker** | PromptForge | API responses, structured output | **Format compliance**: Ensures JSON/structured outputs match expected schema. Prevents downstream parsing errors and system failures. Essential for production APIs serving applications that expect consistent formats. |
+| **Exact Match** | Ragas | Structured data extraction, classification | **Binary verification**: Confirms prediction exactly matches expected output. Critical for regulatory compliance checks, data extraction validation, and quality gates where approximate matches are insufficient. |
 
 ##### Quality / Classifier
 
@@ -937,21 +879,14 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 | Evaluation | Library | Use Case | Why It's Useful |
 |------------|---------|----------|-----------------|
-| **Latency** | MLflow | Production systems, real-time apps | **SLA compliance monitoring**: Tracks response time for user-facing systems. Critical for maintaining service level agreements and user experience standards. Identifies performance degradation before it impacts users. |
-| **Token Efficiency Score** | PromptForge | Cost optimization | **ROI optimization**: Measures tokens used relative to output value. Essential for controlling LLM costs in high-volume applications. Identifies verbose prompts draining budget without quality improvement. |
 | **Agent Goal Accuracy** | Ragas | AI agents, workflow automation | **Task success measurement**: Evaluates if agent achieves intended objectives. Critical for workflow automation where partial task completion creates downstream issues. Validates agent reliability before production deployment. |
 
-##### Performance / Validator
-
-| Evaluation | Library | Use Case | Why It's Useful |
-|------------|---------|----------|-----------------|
-| **Latency Budget Validator** | PromptForge | Real-time systems, user interfaces | **Hard SLA enforcement**: Binary pass/fail on latency thresholds. Prevents slow responses from degrading user experience. Creates quality gates in CI/CD pipelines ensuring only performant prompts reach production. |
 
 ##### Safety / Metric
 
 | Evaluation | Library | Use Case | Why It's Useful |
 |------------|---------|----------|-----------------|
-| **Toxicity Score** | MLflow, Arize Phoenix | User-generated content, public-facing bots | **Brand protection**: Quantifies toxicity level using Perspective API. Essential for public-facing chatbots where toxic outputs damage brand reputation. Enables filtering and escalation workflows. |
+| **Toxicity Score** | Arize Phoenix | User-generated content, public-facing bots | **Brand protection**: Quantifies toxicity level using Perspective API. Essential for public-facing chatbots where toxic outputs damage brand reputation. Enables filtering and escalation workflows. |
 
 ##### Safety / Classifier
 
@@ -978,20 +913,14 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 
 **For Conversation Analysis (Primary Use Case):**
 1. **Faithfulness** (Ragas) - Ensure advisor insights grounded in actual conversation
-2. **Answer Correctness** (MLflow) - Validate fact extraction accuracy
-3. **Hallucination Detection** (Deepchecks) - Prevent fabrication in compliance summaries
-4. **PII Leakage Detection** (DeepEval) - Protect client financial information
-5. **Latency Budget Validator** (PromptForge) - Maintain real-time analysis SLA
+2. **Hallucination Detection** (Deepchecks) - Prevent fabrication in compliance summaries
+3. **PII Leakage Detection** (DeepEval) - Protect client financial information
 
 **For Agent/Workflow Systems:**
 1. **Agent Goal Accuracy** (Ragas) - Validate workflow completion
 2. **Tool Call Accuracy** (Ragas) - Ensure correct API/function usage
 3. **Task Completion** (DeepEval) - Verify end-to-end success
 
-**For Production Monitoring:**
-1. **Token Efficiency Score** (PromptForge) - Control costs
-2. **Latency** (MLflow) - Track performance trends
-3. **Toxicity Score** (MLflow) - Monitor output safety
 
 ---
 
@@ -1009,17 +938,11 @@ The PromptForge platform integrates **93 evaluation metrics** across **6 special
 - **Use Case:** Multi-document retrieval, advanced agent workflows
 - **Keep:** DeepEval for core testing, Guardrails for safety
 
-**Phase 4 (Optional/Advanced):** Phoenix Observability
+**Phase 3 (Optional/Advanced):** Phoenix Observability
 - **Add:** Arize Phoenix for production tracing and drift detection
 - **Metrics:** Q&A quality, hallucination detection, code generation eval (16 evaluations)
 - **Use Case:** Production observability, A/B testing, model performance tracking
 - **Keep:** DeepEval + Ragas for evaluation, Guardrails for safety
-
-**NOT Recommended for Runtime Evaluation:**
-- ❌ **MLflow:** Use ONLY for offline experiment tracking, baseline comparison, A/B test archives
-  - Requires tracking server (operational overhead)
-  - Performance metrics (token, latency, cost) should be calculated directly
-  - Better suited for ML model registry, not real-time LLM pipelines
 
 ### 3.2.1 Reference Implementation: `/promptproject`
 
